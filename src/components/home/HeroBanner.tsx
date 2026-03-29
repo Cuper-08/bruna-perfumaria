@@ -1,88 +1,51 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-
-const slides = [
-  {
-    title: 'Fragrâncias que Encantam',
-    subtitle: 'Descubra perfumes importados e nacionais com os melhores preços',
-    cta: 'Ver Perfumes',
-    href: '/categoria/perfumes',
-    gradient: 'from-primary to-primary/70',
-  },
-  {
-    title: 'Beleza que Inspira',
-    subtitle: 'Maquiagem, skincare e cuidados para realçar sua beleza natural',
-    cta: 'Ver Maquiagem',
-    href: '/categoria/maquiagem',
-    gradient: 'from-accent to-accent/70',
-  },
-  {
-    title: 'Entrega Rápida',
-    subtitle: 'Receba seus produtos favoritos na porta da sua casa por motoboy',
-    cta: 'Comprar Agora',
-    href: '/categoria/corpo',
-    gradient: 'from-bruna-rose to-bruna-pink',
-  },
-];
+import { Search } from 'lucide-react';
+import brunaLogo from '@/assets/bruna-logo.webp';
 
 const HeroBanner = () => {
-  const [current, setCurrent] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrent(prev => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const slide = slides[current];
-
   return (
-    <section className="relative overflow-hidden">
-      <div
-        className={`bg-gradient-to-br ${slide.gradient} transition-all duration-700 ease-in-out`}
-      >
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-xl animate-fade-in" key={current}>
-            <h1 className="font-display text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-              {slide.title}
-            </h1>
-            <p className="text-white/90 text-base md:text-lg mb-6">
-              {slide.subtitle}
-            </p>
-            <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold rounded-full px-8">
-              <Link to={slide.href}>{slide.cta}</Link>
-            </Button>
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-bruna-rose/80">
+      {/* Decorative circles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/5" />
+        <div className="absolute top-1/2 right-1/4 w-24 h-24 rounded-full bg-white/5 animate-pulse-soft" />
+      </div>
+
+      <div className="container mx-auto px-4 py-10 md:py-16 relative z-10">
+        <div className="flex flex-col items-center text-center">
+          {/* Logo */}
+          <div className="mb-5 animate-scale-in">
+            <img
+              src={brunaLogo}
+              alt="Bruna Perfumaria"
+              className="h-24 w-24 md:h-32 md:w-32 rounded-full object-cover border-4 border-white/30 shadow-2xl"
+            />
+          </div>
+
+          {/* Tagline */}
+          <h1 className="font-display italic text-2xl md:text-4xl font-bold text-primary-foreground mb-2 animate-fade-in">
+            Beleza, fragrância e cuidado
+          </h1>
+          <p className="text-primary-foreground/75 text-sm md:text-base mb-6 max-w-md animate-fade-in">
+            Perfumes importados, maquiagem e skincare com entrega rápida por motoboy 🛵
+          </p>
+
+          {/* Gold shimmer divider */}
+          <div className="w-20 h-0.5 animate-shimmer rounded-full mb-6" />
+
+          {/* Search bar glassmorphism */}
+          <div className="w-full max-w-sm animate-slide-up">
+            <div className="glass rounded-2xl flex items-center gap-3 px-4 py-3 hover:bg-white/80 transition-colors">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                type="text"
+                placeholder="Buscar produtos..."
+                className="bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground w-full"
+              />
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`h-2 rounded-full transition-all ${i === current ? 'w-6 bg-white' : 'w-2 bg-white/50'}`}
-          />
-        ))}
-      </div>
-
-      {/* Arrows */}
-      <button
-        onClick={() => setCurrent(prev => (prev - 1 + slides.length) % slides.length)}
-        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 text-white transition hidden md:block"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-      <button
-        onClick={() => setCurrent(prev => (prev + 1) % slides.length)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/20 hover:bg-white/40 text-white transition hidden md:block"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
     </section>
   );
 };
