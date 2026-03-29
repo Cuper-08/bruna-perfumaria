@@ -20,12 +20,17 @@ const FeaturedProducts = () => {
 
   if (isLoading) {
     return (
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="font-display text-2xl md:text-3xl font-semibold text-center mb-8">Destaques</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
-          ))}
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="font-display text-xl font-semibold">Destaques</h2>
+            <div className="flex-1 h-px bg-gradient-to-r from-accent/50 to-transparent" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-64 rounded-2xl" />
+            ))}
+          </div>
         </div>
       </section>
     );
@@ -34,19 +39,25 @@ const FeaturedProducts = () => {
   if (!products?.length) return null;
 
   return (
-    <section className="container mx-auto px-4 py-12">
-      <h2 className="font-display text-2xl md:text-3xl font-semibold text-center mb-8">Destaques</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {products.map(p => (
-          <ProductCard
-            key={p.id}
-            id={p.id}
-            title={p.title}
-            slug={p.slug}
-            price={Number(p.price)}
-            image={p.images?.[0]}
-          />
-        ))}
+    <section className="py-8">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center gap-3 mb-6">
+          <h2 className="font-display text-xl font-semibold">Destaques</h2>
+          <div className="flex-1 h-px bg-gradient-to-r from-accent/50 to-transparent" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 stagger-children">
+          {products.map(p => (
+            <ProductCard
+              key={p.id}
+              id={p.id}
+              title={p.title}
+              slug={p.slug}
+              price={Number(p.price)}
+              image={p.images?.[0]}
+              featured={p.featured || false}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

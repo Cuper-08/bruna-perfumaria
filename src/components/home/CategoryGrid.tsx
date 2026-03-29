@@ -23,36 +23,40 @@ const CategoryGrid = () => {
 
   if (isLoading) {
     return (
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="font-display text-2xl md:text-3xl font-semibold text-center mb-8">Categorias</h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <h2 className="font-display text-xl font-semibold mb-5">Categorias</h2>
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-20 rounded-2xl shrink-0" />
+            ))}
+          </div>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="container mx-auto px-4 py-12">
-      <h2 className="font-display text-2xl md:text-3xl font-semibold text-center mb-8">Categorias</h2>
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-        {categories?.map(cat => {
-          const Icon = iconMap[cat.icon || 'Package'] || Package;
-          return (
-            <Link
-              key={cat.id}
-              to={`/categoria/${cat.slug}`}
-              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-bruna-pink hover:bg-bruna-rose/40 transition-all hover:shadow-md hover:-translate-y-0.5 group"
-            >
-              <div className="p-3 rounded-full bg-primary/15 group-hover:bg-primary/25 transition-colors">
-                <Icon className="h-6 w-6 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-foreground/80">{cat.name}</span>
-            </Link>
-          );
-        })}
+    <section className="py-8">
+      <div className="container mx-auto px-4">
+        <h2 className="font-display text-xl font-semibold mb-5">Categorias</h2>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 stagger-children md:grid md:grid-cols-6 md:overflow-visible">
+          {categories?.map(cat => {
+            const Icon = iconMap[cat.icon || 'Package'] || Package;
+            return (
+              <Link
+                key={cat.id}
+                to={`/categoria/${cat.slug}`}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass shrink-0 min-w-[76px] hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 group"
+              >
+                <div className="p-2.5 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-[11px] font-medium text-foreground/70 whitespace-nowrap">{cat.name}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

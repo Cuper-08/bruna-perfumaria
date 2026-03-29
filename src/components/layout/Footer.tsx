@@ -1,38 +1,43 @@
 import { MapPin, Phone, Clock } from 'lucide-react';
+import brunaLogo from '@/assets/bruna-logo.webp';
 
 const Footer = () => {
   return (
-    <footer className="bg-foreground text-background/90 mt-auto">
+    <footer className="bg-bruna-dark text-white/80 mt-auto pb-20 md:pb-0">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
-          <div>
-            <h3 className="font-display italic text-2xl font-semibold text-primary-foreground mb-3">
-              Bruna <span className="text-bruna-gold">Perfumaria</span>
-            </h3>
-            <p className="text-sm text-background/60">
-              Os melhores produtos de beleza, perfumes e cosméticos com entrega rápida na sua porta.
+          <div className="flex flex-col items-start gap-3">
+            <div className="flex items-center gap-2.5">
+              <img src={brunaLogo} alt="Bruna" className="h-10 w-10 rounded-full object-cover border-2 border-accent/30" />
+              <div>
+                <span className="font-display italic text-xl font-semibold text-white">Bruna</span>
+                <span className="text-accent ml-1.5 font-display italic text-xl">Perfumaria</span>
+              </div>
+            </div>
+            <p className="text-sm text-white/50 leading-relaxed">
+              Os melhores produtos de beleza, perfumes e cosméticos com entrega rápida.
             </p>
           </div>
 
           {/* Contact */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-background/80">Contato</h4>
-            <div className="flex items-start gap-2 text-sm text-background/60">
-              <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+            <h4 className="font-semibold text-xs uppercase tracking-widest text-white/40">Contato</h4>
+            <div className="flex items-start gap-2.5 text-sm text-white/60">
+              <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-accent/70" />
               <span>Av. Olavo Egídio, 1570 — Tucuruvi, São Paulo - SP</span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-background/60">
-              <Phone className="h-4 w-4 shrink-0" />
+            <div className="flex items-center gap-2.5 text-sm text-white/60">
+              <Phone className="h-4 w-4 shrink-0 text-accent/70" />
               <span>(11) 94577-8994</span>
             </div>
           </div>
 
           {/* Hours */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-sm uppercase tracking-wider text-background/80">Horários</h4>
-            <div className="flex items-start gap-2 text-sm text-background/60">
-              <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+            <h4 className="font-semibold text-xs uppercase tracking-widest text-white/40">Horários</h4>
+            <div className="flex items-start gap-2.5 text-sm text-white/60">
+              <Clock className="h-4 w-4 mt-0.5 shrink-0 text-accent/70" />
               <div>
                 <p>Segunda a Sexta: 8h às 20h</p>
                 <p>Sábado: 8h às 18h</p>
@@ -42,7 +47,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-background/10 mt-8 pt-6 text-center text-xs text-background/40">
+        <div className="border-t border-white/10 mt-8 pt-6 text-center text-xs text-white/30">
           © {new Date().getFullYear()} Bruna Perfumaria. Todos os direitos reservados.
         </div>
       </div>
