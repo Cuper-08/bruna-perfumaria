@@ -1,67 +1,33 @@
 
 
-# Bruna Perfumaria — Fase 1: Banco de Dados + Design System + Layout + Carrinho + Home
+# Ajuste de Identidade Visual — Bruna Perfumaria
 
-Este é o primeiro passo de implementação. Vamos construir a fundação completa do app.
+## Problema
+A cor atual (`#C41E2E` — vermelho escuro/frio) nao corresponde a fachada da loja, que usa um **vermelho vibrante rosado** mais quente e luminoso. O header tambem nao reproduz a logo cursiva com a silhueta feminina.
 
----
+## Alteracoes
 
-## O que será construído agora
+### 1. Paleta de Cores (src/index.css)
+Ajustar o primary e tokens customizados para o vermelho vibrante da fachada (aprox. `#E52535` — HSL `355 78% 52%`), mais quente e luminoso. Ajustar rosa e rose para complementar.
 
-### 1. Banco de Dados (Migration)
-Criar toda a estrutura em uma única migration:
+### 2. Header com Logo Fiel (src/components/layout/Header.tsx)
+- Fundo do header em **vermelho primary** (como a fachada) com texto/icones brancos
+- Logo "Bruna" em fonte cursiva branca com "Perfumaria" abaixo, reproduzindo o estilo da fachada
+- Adicionar um SVG simplificado da silhueta feminina ao lado do logo
+- Menu e carrinho em branco
 
-- **Enums:** `payment_method_type`, `payment_status_type`, `order_status_type`, `app_role`
-- **Tabelas:** `categories`, `products`, `orders`, `admin_settings`, `user_roles`
-- **RLS:** Políticas de segurança para cada tabela
-- **Função:** `has_role()` SECURITY DEFINER para verificar admin
-- **Storage:** Bucket `product-images` público
-- **Seed:** Inserir categorias iniciais (Perfumes, Maquiagem, Cabelo, Corpo, Skincare, Higiene) e configurações padrão (taxa entrega R$5, loja aberta)
+### 3. Hero Banner (src/components/home/HeroBanner.tsx)
+- Gradientes mais vibrantes usando a nova paleta, mantendo a energia da marca
 
-### 2. Design System
-- Atualizar `index.html` com Google Fonts (Playfair Display + Inter)
-- Atualizar `src/index.css` com paleta Bruna: primary vermelho (#C41E2E), acentos rosa/dourado, fundo off-white
-- Estilos de impressão térmica 80mm via `@media print`
+### 4. CategoryGrid (src/components/home/CategoryGrid.tsx)
+- Cards com fundo rosa claro e icones no vermelho vibrante, reforçando a identidade
 
-### 3. Layout Base
-- `StoreLayout.tsx` — wrapper com Header + Footer + WhatsApp flutuante
-- `Header.tsx` — logo "Bruna Perfumaria" cursiva, navegação por categorias, badge do carrinho
-- `Footer.tsx` — endereço, telefone, horários
-- `WhatsAppButton.tsx` — botão flutuante verde
+### 5. Copiar imagem da fachada (opcional)
+- Salvar imagem uploadada em `src/assets/bruna-fachada.png` para referencia futura
 
-### 4. Carrinho (Context + localStorage)
-- `CartContext.tsx` — add, remove, updateQuantity, clear, total, itemCount
-- Persistência em localStorage com expiração de 7 dias
-
-### 5. Páginas do Cliente (Início)
-- **Home (Index.tsx)** — Hero banner, grid de categorias, produtos em destaque
-- **CategoryPage.tsx** — Grid de produtos filtrados, busca, ordenação
-- **ProductPage.tsx** — Galeria, detalhes, adicionar ao carrinho
-- **CartPage.tsx** — Lista editável, subtotal, total, botão finalizar
-
-### 6. Componentes de Suporte
-- `HeroBanner.tsx`, `CategoryGrid.tsx`, `FeaturedProducts.tsx`
-- `ProductCard.tsx`, `ProductGallery.tsx`
-
-### 7. Rotas Iniciais (App.tsx)
-```text
-/                  → Home
-/categoria/:slug   → CategoryPage
-/produto/:slug     → ProductPage
-/carrinho          → CartPage
-```
-
-### 8. Dependências
-- `canvas-confetti` (para uso posterior na confirmação)
-- `react-input-mask` (para uso posterior no checkout)
-
----
-
-## Detalhes Técnicos
-
-- Produtos sem dados reais inicialmente (busca do Supabase, exibe "Nenhum produto" se vazio)
-- Categorias carregadas do banco (já com seed)
-- Carrinho 100% client-side com localStorage
-- Layout mobile-first responsivo
-- Cores em HSL no CSS variables seguindo padrão Shadcn
+## Arquivos Editados
+- `src/index.css` — nova paleta HSL
+- `src/components/layout/Header.tsx` — header vermelho com logo branca + silhueta
+- `src/components/home/HeroBanner.tsx` — gradientes atualizados
+- `src/components/home/CategoryGrid.tsx` — styling refinado
 
