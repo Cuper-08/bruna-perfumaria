@@ -3,7 +3,7 @@ import brunaLogo from '@/assets/bruna-logo.webp';
 
 const HeroBanner = () => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-bruna-rose/80">
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/85">
       {/* Decorative circles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
@@ -35,12 +35,12 @@ const HeroBanner = () => {
 
           {/* Search bar glassmorphism */}
           <div className="w-full max-w-sm animate-slide-up">
-            <div className="glass rounded-2xl flex items-center gap-3 px-4 py-3 hover:bg-white/80 transition-colors">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="backdrop-blur-xl bg-white/20 border border-white/25 shadow-lg rounded-2xl flex items-center gap-3 px-4 py-3 hover:bg-white/30 transition-colors">
+              <Search className="h-4 w-4 text-white/70 shrink-0" />
               <input
                 type="text"
                 placeholder="Buscar produtos..."
-                className="bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground w-full"
+                className="bg-transparent outline-none text-sm text-white placeholder:text-white/60 w-full"
               />
             </div>
           </div>
