@@ -13,42 +13,42 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 15%;
 
-    --primary: 355 73% 44%;
+    --primary: 355 78% 52%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 340 30% 95%;
-    --secondary-foreground: 355 73% 44%;
+    --secondary: 345 40% 95%;
+    --secondary-foreground: 355 78% 52%;
 
-    --muted: 30 15% 94%;
+    --muted: 340 20% 94%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 38 60% 55%;
+    --accent: 38 65% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 340 20% 90%;
-    --input: 340 20% 90%;
-    --ring: 355 73% 44%;
+    --border: 345 25% 90%;
+    --input: 345 25% 90%;
+    --ring: 355 78% 52%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 340 25% 97%;
+    --sidebar-background: 345 30% 97%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 355 73% 44%;
+    --sidebar-primary: 355 78% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 340 30% 93%;
+    --sidebar-accent: 345 35% 93%;
     --sidebar-accent-foreground: 0 0% 20%;
-    --sidebar-border: 340 20% 90%;
-    --sidebar-ring: 355 73% 44%;
+    --sidebar-border: 345 25% 90%;
+    --sidebar-ring: 355 78% 52%;
 
     /* Custom tokens */
-    --bruna-red: 355 73% 44%;
-    --bruna-pink: 340 40% 92%;
-    --bruna-gold: 38 60% 55%;
-    --bruna-cream: 30 20% 98%;
-    --bruna-rose: 350 50% 85%;
+    --bruna-red: 355 78% 52%;
+    --bruna-pink: 345 45% 93%;
+    --bruna-gold: 38 65% 55%;
+    --bruna-cream: 30 25% 98%;
+    --bruna-rose: 350 55% 85%;
   }
 
   .dark {
@@ -61,16 +61,16 @@
     --popover: 0 0% 12%;
     --popover-foreground: 30 20% 95%;
 
-    --primary: 355 73% 50%;
+    --primary: 355 78% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 340 20% 18%;
+    --secondary: 345 20% 18%;
     --secondary-foreground: 30 20% 95%;
 
     --muted: 0 0% 18%;
     --muted-foreground: 0 0% 65%;
 
-    --accent: 38 60% 50%;
+    --accent: 38 65% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
@@ -78,15 +78,15 @@
 
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 355 73% 50%;
+    --ring: 355 78% 55%;
     --sidebar-background: 0 0% 10%;
     --sidebar-foreground: 30 20% 95%;
-    --sidebar-primary: 355 73% 50%;
+    --sidebar-primary: 355 78% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 16%;
     --sidebar-accent-foreground: 30 20% 95%;
     --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 355 73% 50%;
+    --sidebar-ring: 355 78% 55%;
   }
 }
 

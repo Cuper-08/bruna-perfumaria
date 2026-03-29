@@ -9,21 +9,21 @@ const slides = [
     subtitle: 'Descubra perfumes importados e nacionais com os melhores preços',
     cta: 'Ver Perfumes',
     href: '/categoria/perfumes',
-    gradient: 'from-primary/90 to-primary/60',
+    gradient: 'from-primary to-primary/70',
   },
   {
     title: 'Beleza que Inspira',
     subtitle: 'Maquiagem, skincare e cuidados para realçar sua beleza natural',
     cta: 'Ver Maquiagem',
     href: '/categoria/maquiagem',
-    gradient: 'from-bruna-gold/80 to-bruna-gold/50',
+    gradient: 'from-accent to-accent/70',
   },
   {
     title: 'Entrega Rápida',
     subtitle: 'Receba seus produtos favoritos na porta da sua casa por motoboy',
     cta: 'Comprar Agora',
     href: '/categoria/corpo',
-    gradient: 'from-bruna-rose/80 to-bruna-pink/60',
+    gradient: 'from-bruna-rose to-bruna-pink',
   },
 ];
 
