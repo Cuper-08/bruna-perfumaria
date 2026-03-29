@@ -44,9 +44,9 @@ const CategoryGrid = () => {
             <Link
               key={cat.id}
               to={`/categoria/${cat.slug}`}
-              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all hover:shadow-md hover:-translate-y-0.5 group"
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-bruna-pink hover:bg-bruna-rose/40 transition-all hover:shadow-md hover:-translate-y-0.5 group"
             >
-              <div className="p-3 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <div className="p-3 rounded-full bg-primary/15 group-hover:bg-primary/25 transition-colors">
                 <Icon className="h-6 w-6 text-primary" />
               </div>
               <span className="text-sm font-medium text-foreground/80">{cat.name}</span>
