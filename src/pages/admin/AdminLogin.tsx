@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Lock, Mail } from 'lucide-react';
-import brunaLogo from '@/assets/bruna-logo.png';
+import brunaLogo from '@/assets/bruna-logo.webp';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
