@@ -23,8 +23,13 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [loading, setLoading] = useState(true);
 
   const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
-    return data === true;
+    try {
+      const { data } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
+      return data === true;
+    } catch (err) {
+      console.error('checkAdminRole error:', err);
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -33,20 +38,14 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const admin = await checkAdminRole(session.user.id);
-        setIsAdmin(admin);
+        try {
+          const admin = await checkAdminRole(session.user.id);
+          setIsAdmin(admin);
+        } catch {
+          setIsAdmin(false);
+        }
       } else {
         setIsAdmin(false);
-      }
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const admin = await checkAdminRole(session.user.id);
-        setIsAdmin(admin);
       }
       setLoading(false);
     });
