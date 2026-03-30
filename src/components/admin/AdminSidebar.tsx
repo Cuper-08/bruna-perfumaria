@@ -15,7 +15,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import brunaLogo from '@/assets/bruna-logo.png';
+import brunaLogo from '@/assets/bruna-logo.webp';
 
 const items = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
