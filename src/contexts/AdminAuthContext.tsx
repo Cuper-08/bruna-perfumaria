@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { Navigate } from 'react-router-dom';
@@ -21,48 +21,101 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const versionRef = useRef(0);
 
-  const checkAdminRole = async (userId: string) => {
-    try {
-      const { data } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
-      return data === true;
-    } catch (err) {
-      console.error('checkAdminRole error:', err);
-      return false;
+  const applySession = useCallback(async (newSession: Session | null) => {
+    const version = ++versionRef.current;
+
+    if (!mountedRef.current) return;
+
+    setSession(newSession);
+    setUser(newSession?.user ?? null);
+
+    if (!newSession?.user) {
+      setIsAdmin(false);
+      setLoading(false);
+      return;
     }
-  };
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: newSession.user.id,
+        _role: 'admin',
+      });
 
-      if (session?.user) {
-        try {
-          const admin = await checkAdminRole(session.user.id);
-          setIsAdmin(admin);
-        } catch {
-          setIsAdmin(false);
-        }
+      // Ignore stale responses
+      if (version !== versionRef.current || !mountedRef.current) return;
+
+      if (error) {
+        console.error('has_role error:', error);
+        setIsAdmin(false);
       } else {
+        setIsAdmin(data === true);
+      }
+    } catch (err) {
+      console.error('applySession error:', err);
+      if (mountedRef.current && version === versionRef.current) {
         setIsAdmin(false);
       }
-      setLoading(false);
+    } finally {
+      if (mountedRef.current && version === versionRef.current) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    // 1. Register listener first (catches subsequent changes)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        // Don't do heavy async work here — just schedule applySession
+        applySession(newSession);
+      }
+    );
+
+    // 2. Hydrate initial session
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      applySession(initialSession);
+    }).catch(() => {
+      if (mountedRef.current) setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // 3. Safety timeout — never stay loading forever
+    const timeout = setTimeout(() => {
+      if (mountedRef.current) setLoading(false);
+    }, 8000);
+
+    return () => {
+      mountedRef.current = false;
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [applySession]);
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
 
-    const admin = await checkAdminRole(data.user.id);
-    if (!admin) {
+    // Role check — the onAuthStateChange will also fire and call applySession,
+    // but we do an immediate check here for the signIn return value
+    try {
+      const { data: roleData } = await supabase.rpc('has_role', {
+        _user_id: data.user.id,
+        _role: 'admin',
+      });
+
+      if (roleData !== true) {
+        await supabase.auth.signOut();
+        return { error: 'Acesso negado. Você não tem permissão de administrador.' };
+      }
+    } catch {
       await supabase.auth.signOut();
-      return { error: 'Acesso negado. Você não tem permissão de administrador.' };
+      return { error: 'Erro ao verificar permissões. Tente novamente.' };
     }
-    setIsAdmin(true);
+
     return { error: null };
   };
 

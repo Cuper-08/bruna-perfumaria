@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Button } from '@/components/ui/button';
@@ -13,27 +13,47 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, isAdmin } = useAdminAuth();
+  const { signIn, isAdmin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
 
-  if (isAdmin) {
-    navigate('/admin', { replace: true });
-    return null;
-  }
+  // Redirect via useEffect — never during render
+  useEffect(() => {
+    if (!authLoading && isAdmin) {
+      navigate('/admin', { replace: true });
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // prevent double submit
     setError('');
     setLoading(true);
 
-    const { error } = await signIn(email, password);
-    if (error) {
-      setError(error);
-    } else {
-      navigate('/admin');
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError(error);
+      } else {
+        navigate('/admin');
+      }
+    } catch {
+      setError('Erro inesperado. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
+  // Show nothing while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse-soft text-primary text-lg font-semibold">Carregando...</div>
+      </div>
+    );
+  }
+
+  // Already admin — useEffect will redirect
+  if (isAdmin) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/30 p-4">

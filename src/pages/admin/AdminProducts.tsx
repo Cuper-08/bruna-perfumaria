@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, Search, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -31,10 +31,23 @@ const AdminProducts = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchProducts = async () => {
-    const { data } = await supabase.from('products').select('*').order('title');
-    if (data) setProducts(data);
+    setLoadingProducts(true);
+    setErrorMsg(null);
+    try {
+      const { data, error } = await supabase.from('products').select('*').order('title');
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao carregar produtos';
+      setErrorMsg(msg);
+      console.error('fetchProducts error:', err);
+    } finally {
+      setLoadingProducts(false);
+    }
   };
 
   useEffect(() => {
@@ -45,13 +58,23 @@ const AdminProducts = () => {
   }, []);
 
   const toggleActive = async (id: string, active: boolean) => {
-    await supabase.from('products').update({ active: !active }).eq('id', id);
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, active: !active } : p)));
+    const prev = products;
+    setProducts((p) => p.map((x) => (x.id === id ? { ...x, active: !active } : x)));
+    const { error } = await supabase.from('products').update({ active: !active }).eq('id', id);
+    if (error) {
+      toast.error('Erro ao alterar status');
+      setProducts(prev); // rollback
+    }
   };
 
   const toggleFeatured = async (id: string, featured: boolean) => {
-    await supabase.from('products').update({ featured: !featured }).eq('id', id);
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, featured: !featured } : p)));
+    const prev = products;
+    setProducts((p) => p.map((x) => (x.id === id ? { ...x, featured: !featured } : x)));
+    const { error } = await supabase.from('products').update({ featured: !featured }).eq('id', id);
+    if (error) {
+      toast.error('Erro ao alterar destaque');
+      setProducts(prev);
+    }
   };
 
   const handleDelete = async () => {
@@ -83,6 +106,27 @@ const AdminProducts = () => {
   });
 
   const getCategoryName = (id: string | null) => categories.find((c) => c.id === id)?.name || '—';
+
+  // Loading state
+  if (loadingProducts) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Carregando produtos...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (errorMsg) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <p className="text-destructive font-medium">{errorMsg}</p>
+        <Button onClick={fetchProducts} variant="outline">Tentar novamente</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -119,6 +163,14 @@ const AdminProducts = () => {
       </div>
 
       <p className="text-sm text-muted-foreground">{filtered.length} produto(s)</p>
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          <Package className="h-12 w-12 mx-auto mb-3 opacity-40" />
+          <p>Nenhum produto encontrado</p>
+        </div>
+      )}
 
       {/* Product List */}
       <div className="space-y-2">
