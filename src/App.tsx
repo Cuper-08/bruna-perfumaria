@@ -32,17 +32,10 @@ const App = () => (
             <Route path="/produto/:slug" element={<ProductPage />} />
             <Route path="/carrinho" element={<CartPage />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin/login" element={
-              <AdminAuthProvider>
-                <AdminLogin />
-              </AdminAuthProvider>
-            } />
-            <Route path="/admin" element={
-              <AdminAuthProvider>
-                <AdminLayout />
-              </AdminAuthProvider>
-            }>
+            {/* Admin Routes — single provider */}
+            <Route element={<AdminAuthProvider><Outlet /></AdminAuthProvider>}>
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="pedidos" element={<AdminOrders />} />
               <Route path="produtos" element={<AdminProducts />} />
