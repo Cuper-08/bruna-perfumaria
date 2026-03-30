@@ -12,16 +12,8 @@ const Header = () => {
             <img
               src={brunaLogo}
               alt="Bruna Perfumaria"
-              className="h-9 w-9 md:h-10 md:w-10 rounded-full object-cover border-2 border-white/30"
+              className="h-10 md:h-12 w-auto"
             />
-            <div className="flex flex-col">
-              <span className="font-display italic text-xl md:text-2xl font-semibold text-primary-foreground tracking-tight leading-none">
-                Bruna
-              </span>
-              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-primary-foreground/70 font-medium">
-                Perfumaria
-              </span>
-            </div>
           </Link>
 
           {/* Desktop nav */}
