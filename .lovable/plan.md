@@ -1,52 +1,24 @@
 
 
-# CRUD Completo de Produtos — Admin Bruna Perfumaria
+# Fix: Painel de Produtos travado em "Carregando..."
 
 ## Problema
-A aba Produtos no admin apenas lista produtos com toggles de ativo/destaque. Nao permite cadastrar, editar ou excluir produtos.
 
-## Solucao
+O `AdminAuthContext` tem duas fontes de inicializacao concorrentes (`onAuthStateChange` + `getSession`) que podem causar race conditions. Alem disso, se o RPC `has_role` falhar (erro de rede, usuario sem role), nao ha tratamento de erro — o `loading` pode nunca resolver.
 
-Reescrever `AdminProducts.tsx` com CRUD completo e criar um componente de formulario `ProductFormDialog.tsx`.
+Tambem ha dois `AdminAuthProvider` separados (um para `/admin/login` e outro para `/admin/*`), o que significa que o estado de autenticacao nao e compartilhado entre eles.
 
-### 1. `src/components/admin/ProductFormDialog.tsx` (CRIAR)
-Dialog/Sheet com formulario completo para criar e editar produtos:
-- **Titulo** (text input, obrigatorio)
-- **Slug** (auto-gerado do titulo, editavel)
-- **Preco** (number input com mascara R$)
-- **Categoria** (select dropdown carregado do Supabase `categories`)
-- **Descricao** (textarea)
-- **Imagens** (upload para Supabase Storage bucket `product-images`, preview das imagens, remover imagem)
-- **Ativo** (switch, default true)
-- **Destaque** (switch, default false)
-- Botao salvar: INSERT se novo, UPDATE se editando
-- Validacao: titulo e preco obrigatorios
+## Alteracoes
 
-### 2. `src/pages/admin/AdminProducts.tsx` (REESCREVER)
-- Botao **"+ Novo Produto"** no header que abre o ProductFormDialog em modo criacao
-- Lista de produtos em cards (manter layout atual)
-- Adicionar botoes **Editar** (abre dialog preenchido) e **Excluir** (confirm dialog + delete) em cada card
-- Busca/filtro por nome (input search)
-- Filtro por categoria (select)
-- Ao salvar/excluir, atualiza lista automaticamente
+### 1. `src/contexts/AdminAuthContext.tsx`
+- Remover a chamada duplicada `getSession` — usar apenas `onAuthStateChange` que ja emite `INITIAL_SESSION` como primeiro evento
+- Adicionar try/catch no `checkAdminRole` para que erros nao travem o loading
+- Garantir que `setLoading(false)` sempre executa
 
-### 3. Upload de Imagens
-- Upload para bucket `product-images` (ja existe e e publico)
-- Path: `product-images/{productId}/{timestamp}.{ext}`
-- Apos upload, salva URL publica no array `images[]` do produto
-- Preview com miniatura e botao X para remover
+### 2. `src/App.tsx`
+- Mover o `AdminAuthProvider` para envolver TODAS as rotas admin (login + layout) em um unico provider, evitando instancias separadas
 
 ## Arquivos
-
-| Arquivo | Acao |
-|---------|------|
-| `src/components/admin/ProductFormDialog.tsx` | Criar |
-| `src/pages/admin/AdminProducts.tsx` | Reescrever com CRUD completo |
-
-## Detalhes Tecnicos
-- Slug gerado com: `title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')`
-- Upload usa `supabase.storage.from('product-images').upload(path, file)`
-- URL publica via `supabase.storage.from('product-images').getPublicUrl(path)`
-- Delete produto: `supabase.from('products').delete().eq('id', id)` (RLS ja permite para admin)
-- Nenhuma migration necessaria — tabelas e policies ja existem
+- `src/contexts/AdminAuthContext.tsx` — fix race condition + error handling
+- `src/App.tsx` — single AdminAuthProvider wrapper
 
