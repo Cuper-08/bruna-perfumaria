@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,10 +36,11 @@ const App = () => (
             <Route element={<AdminAuthProvider><Outlet /></AdminAuthProvider>}>
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="pedidos" element={<AdminOrders />} />
-              <Route path="produtos" element={<AdminProducts />} />
-              <Route path="config" element={<AdminSettings />} />
+                <Route index element={<AdminDashboard />} />
+                <Route path="pedidos" element={<AdminOrders />} />
+                <Route path="produtos" element={<AdminProducts />} />
+                <Route path="config" element={<AdminSettings />} />
+              </Route>
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
