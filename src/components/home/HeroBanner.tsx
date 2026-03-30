@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import brunaLogo from '@/assets/bruna-logo.webp';
+import brunaLogo from '@/assets/bruna-logo.png';
 
 const HeroBanner = () => {
   return (
@@ -18,7 +18,7 @@ const HeroBanner = () => {
             <img
               src={brunaLogo}
               alt="Bruna Perfumaria"
-              className="h-24 w-24 md:h-32 md:w-32 rounded-full object-cover border-4 border-white/30 shadow-2xl"
+              className="h-28 md:h-40 w-auto object-contain"
             />
           </div>
 

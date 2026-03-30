@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import brunaLogo from '@/assets/bruna-logo.webp';
+import brunaLogo from '@/assets/bruna-logo.png';
 
 const Header = () => {
   return (
@@ -8,20 +8,12 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14 md:h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center">
             <img
               src={brunaLogo}
               alt="Bruna Perfumaria"
-              className="h-9 w-9 md:h-10 md:w-10 rounded-full object-cover border-2 border-white/30"
+              className="h-10 md:h-12 w-auto object-contain"
             />
-            <div className="flex flex-col">
-              <span className="font-display italic text-xl md:text-2xl font-semibold text-primary-foreground tracking-tight leading-none">
-                Bruna
-              </span>
-              <span className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-primary-foreground/70 font-medium">
-                Perfumaria
-              </span>
-            </div>
           </Link>
 
           {/* Desktop nav */}
