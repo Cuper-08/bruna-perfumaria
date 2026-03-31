@@ -3,8 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Gem, Brush, Wind, Flower2, Leaf, ShieldCheck, Package } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { LucideIcon } from 'lucide-react';
 
-const iconMap: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+const iconMap: Record<string, LucideIcon> = {
   Sparkles: Gem,
   Palette: Brush,
   Scissors: Wind,
