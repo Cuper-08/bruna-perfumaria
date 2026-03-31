@@ -8,7 +8,6 @@ import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
