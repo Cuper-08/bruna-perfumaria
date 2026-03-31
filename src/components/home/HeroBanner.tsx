@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import brunaLogo from '@/assets/bruna-logo.png';
 import { useStoreCustomization } from '@/hooks/useStoreCustomization';
-import HeroSearchBar from './HeroSearchBar';
+import HeroSearchBar from '@/components/home/HeroSearchBar';
 
 const floatingBlobs = [
   { size: 'w-72 h-72', pos: '-top-20 -right-20', bg: 'bg-white/[0.04]', duration: 7, delay: 0 },
