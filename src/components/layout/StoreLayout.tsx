@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import Header from './Header';
+
 import Footer from './Footer';
 import WhatsAppButton from './WhatsAppButton';
 import BottomNavBar from './BottomNavBar';
@@ -12,7 +12,7 @@ interface StoreLayoutProps {
 const StoreLayout = ({ children }: StoreLayoutProps) => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
       <Footer />
       <WhatsAppButton />

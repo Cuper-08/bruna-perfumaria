@@ -59,7 +59,7 @@ const HeroBanner = () => {
       <div className="container mx-auto px-4 py-16 md:py-28 relative z-10">
         {/* Glass card */}
         <motion.div
-          className="flex flex-col items-center text-center max-w-lg mx-auto bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-3xl px-6 py-10 md:px-10 md:py-14"
+          className="flex flex-col items-center text-center max-w-lg mx-auto px-6 py-10 md:px-10 md:py-14"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: 'easeOut' as const }}
