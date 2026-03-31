@@ -1,49 +1,47 @@
-import { Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import brunaLogo from '@/assets/bruna-logo.png';
 
 const HeroBanner = () => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/85">
-      {/* Decorative circles */}
+    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/80">
+      {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-white/5" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/5" />
-        <div className="absolute top-1/2 right-1/4 w-24 h-24 rounded-full bg-white/5 animate-pulse-soft" />
+        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/[0.03]" />
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-white/[0.03]" />
+        <div className="absolute top-1/3 right-1/5 w-32 h-32 rounded-full bg-accent/[0.06] animate-pulse-soft" />
       </div>
 
-      <div className="container mx-auto px-4 py-10 md:py-16 relative z-10">
-        <div className="flex flex-col items-center text-center">
+      <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
+        <div className="flex flex-col items-center text-center max-w-lg mx-auto">
           {/* Logo */}
-          <div className="mb-5 animate-scale-in">
+          <div className="mb-6 animate-scale-in">
             <img
               src={brunaLogo}
               alt="Bruna Perfumaria"
-              className="h-28 md:h-40 w-auto object-contain"
+              className="h-24 md:h-36 w-auto object-contain drop-shadow-lg"
             />
           </div>
 
+          {/* Gold shimmer divider */}
+          <div className="w-24 h-px animate-shimmer rounded-full mb-6" />
+
           {/* Tagline */}
-          <h1 className="font-display italic text-2xl md:text-4xl font-bold text-primary-foreground mb-2 animate-fade-in">
+          <h1 className="font-display italic text-2xl md:text-4xl font-bold text-primary-foreground mb-3 tracking-wide animate-fade-in">
             Beleza, fragrância e cuidado
           </h1>
-          <p className="text-primary-foreground/75 text-sm md:text-base mb-6 max-w-md animate-fade-in">
+          <p className="text-primary-foreground/65 text-sm md:text-base mb-8 tracking-wide animate-fade-in">
             Qualidade e beleza em um só lugar.
           </p>
 
-          {/* Gold shimmer divider */}
-          <div className="w-20 h-0.5 animate-shimmer rounded-full mb-6" />
-
-          {/* Search bar glassmorphism */}
-          <div className="w-full max-w-sm animate-slide-up">
-            <div className="backdrop-blur-xl bg-white/20 border border-white/25 shadow-lg rounded-2xl flex items-center gap-3 px-4 py-3 hover:bg-white/30 transition-colors">
-              <Search className="h-4 w-4 text-white/70 shrink-0" />
-              <input
-                type="text"
-                placeholder="Buscar produtos..."
-                className="bg-transparent outline-none text-sm text-white placeholder:text-white/60 w-full"
-              />
-            </div>
-          </div>
+          {/* CTA */}
+          <Link
+            to="/categoria/perfumes"
+            className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-full text-sm font-semibold tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 animate-slide-up"
+          >
+            Ver Coleção
+            <ArrowRight className="h-4 w-4" strokeWidth={2} />
+          </Link>
         </div>
       </div>
     </section>
