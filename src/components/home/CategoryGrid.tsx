@@ -57,7 +57,7 @@ const CategoryGrid = () => {
                 to={`/categoria/${cat.slug}`}
                 className="flex flex-col items-center gap-2 p-4 rounded-2xl shrink-0 min-w-[84px] bg-card/80 backdrop-blur-sm border border-white/40 shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300 group"
               >
-                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/15 to-pink-200/30 group-hover:from-primary/25 group-hover:to-pink-200/50 transition-all duration-300 shadow-inner">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 shadow-inner">
                   <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
                 </div>
                 <span className="text-xs font-medium tracking-wide text-foreground/70 whitespace-nowrap">{cat.name}</span>
