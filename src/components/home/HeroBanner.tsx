@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import brunaLogo from '@/assets/bruna-logo.png';
 
 const HeroBanner = () => {
@@ -15,33 +16,59 @@ const HeroBanner = () => {
       <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
         <div className="flex flex-col items-center text-center max-w-lg mx-auto">
           {/* Logo */}
-          <div className="mb-6 animate-scale-in">
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          >
             <img
               src={brunaLogo}
               alt="Bruna Perfumaria"
               className="h-24 md:h-36 w-auto object-contain drop-shadow-lg"
             />
-          </div>
+          </motion.div>
 
           {/* Gold shimmer divider */}
-          <div className="w-24 h-px animate-shimmer rounded-full mb-6" />
+          <motion.div
+            className="w-24 h-px animate-shimmer rounded-full mb-6"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          />
 
           {/* Tagline */}
-          <h1 className="font-display italic text-2xl md:text-4xl font-bold text-primary-foreground mb-3 tracking-wide animate-fade-in">
+          <motion.h1
+            className="font-display italic text-2xl md:text-4xl font-bold text-primary-foreground mb-3 tracking-wide"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             Beleza, fragrância e cuidado
-          </h1>
-          <p className="text-primary-foreground/65 text-sm md:text-base mb-8 tracking-wide animate-fade-in">
+          </motion.h1>
+          <motion.p
+            className="text-primary-foreground/65 text-sm md:text-base mb-8 tracking-wide"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
             Qualidade e beleza em um só lugar.
-          </p>
+          </motion.p>
 
           {/* CTA */}
-          <Link
-            to="/categoria/perfumes"
-            className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-full text-sm font-semibold tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 animate-slide-up"
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
           >
-            Ver Coleção
-            <ArrowRight className="h-4 w-4" strokeWidth={2} />
-          </Link>
+            <Link
+              to="/categoria/perfumes"
+              className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-6 py-3 rounded-full text-sm font-semibold tracking-wide shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            >
+              Ver Coleção
+              <ArrowRight className="h-4 w-4" strokeWidth={2} />
+            </Link>
+          </motion.div>
         </div>
       </div>
     </section>
