@@ -11,7 +11,7 @@ const Footer = () => {
             <img
               src={brunaLogo}
               alt="Bruna Perfumaria"
-              className="h-10 w-auto object-contain brightness-0 invert opacity-80"
+              className="h-14 md:h-16 w-auto object-contain opacity-90"
             />
             <p className="text-sm text-white/40 leading-relaxed">
               Os melhores produtos de beleza, perfumes e cosméticos com entrega rápida.

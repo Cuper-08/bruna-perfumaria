@@ -1,27 +1,37 @@
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
+import { motion } from 'framer-motion';
 import brunaLogo from '@/assets/bruna-logo.png';
 
 const Header = () => {
   return (
-    <header className="sticky top-0 z-50">
-      {/* Promo bar */}
-      <div className="bg-bruna-dark text-center py-1.5 px-4">
-        <p className="text-[11px] tracking-widest uppercase text-accent/90 font-medium">
-          ✨ Frete grátis acima de R$199 • Parcele em até 3x
-        </p>
+    <motion.header
+      className="sticky top-0 z-50"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Promo bar with marquee */}
+      <div className="bg-bruna-dark text-center py-1.5 px-4 overflow-hidden">
+        <motion.p
+          className="text-[11px] tracking-widest uppercase text-accent/90 font-medium whitespace-nowrap"
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+        >
+          ✨ Frete grátis acima de R$199 • Parcele em até 3x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Frete grátis acima de R$199 • Parcele em até 3x
+        </motion.p>
       </div>
 
-      {/* Main header */}
-      <div className="bg-primary/95 backdrop-blur-md shadow-sm">
+      {/* Main header — glassmorphism */}
+      <div className="bg-primary/80 backdrop-blur-xl border-b border-white/10 shadow-lg">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-14 md:h-16">
+          <div className="flex items-center justify-between h-16 md:h-18">
             {/* Logo */}
             <Link to="/" className="flex items-center">
               <img
                 src={brunaLogo}
                 alt="Bruna Perfumaria"
-                className="h-10 md:h-12 w-auto object-contain"
+                className="h-12 md:h-14 w-auto object-contain drop-shadow-md"
               />
             </Link>
 
@@ -53,7 +63,7 @@ const Header = () => {
           </div>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 };
 
