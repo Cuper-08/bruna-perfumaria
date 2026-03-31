@@ -64,15 +64,15 @@ const HeroBanner = () => {
         ))}
       </div>
 
-      <div className="container mx-auto px-4 py-16 md:py-28 relative z-10">
+      <div className="container mx-auto px-4 py-6 md:py-12 relative z-10">
         <motion.div
-          className="flex flex-col items-center text-center max-w-lg mx-auto px-6 py-10 md:px-10 md:py-14"
+          className="flex flex-col items-center text-center max-w-lg mx-auto px-6 py-4 md:px-10 md:py-6"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: 'easeOut' as const }}
         >
           <motion.div
-            className="mb-6"
+            className="mb-3"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, ease: 'easeOut' as const }}
@@ -85,7 +85,7 @@ const HeroBanner = () => {
           </motion.div>
 
           <motion.div
-            className="w-32 h-px animate-shimmer rounded-full mb-6"
+            className="w-32 h-px animate-shimmer rounded-full mb-3"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
@@ -100,7 +100,7 @@ const HeroBanner = () => {
             {heroTitle}
           </motion.h1>
           <motion.p
-            className="text-primary-foreground/65 text-sm md:text-base mb-8 tracking-wide"
+            className="text-primary-foreground/65 text-sm md:text-base mb-5 tracking-wide"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.35 }}

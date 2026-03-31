@@ -6,13 +6,17 @@ import { Button } from '@/components/ui/button';
 import { ShoppingBag, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { addItem } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
