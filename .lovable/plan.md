@@ -1,53 +1,36 @@
 
 
-# Animacoes com Framer Motion — Home Premium
+# Header, Hero e Footer — Logos Maiores + Glassmorphism + Animacoes
 
-## Resumo
-Instalar `framer-motion` e adicionar animacoes de entrada (scroll-triggered) nas secoes da home e cards de produto. Cada secao aparece com fade-up ao entrar no viewport. Cards de produto e categorias entram com stagger (um apos o outro).
+## Problema
+- Logos no header (h-10), hero (h-24) e footer (h-10) estao muito pequenas
+- Header e hero sao blocos vermelho solido estaticos, sem vida
+- Falta glassmorphism, particulas flutuantes e micro-animacoes que deem energia
 
 ## Alteracoes
 
-### 1. Instalar `framer-motion`
-- `npm install framer-motion`
+### 1. `src/components/layout/Header.tsx`
+- Logo maior: `h-12 md:h-14`
+- Adicionar glassmorphism: `bg-primary/80 backdrop-blur-xl` com borda inferior `border-b border-white/10`
+- Wrap com `motion.header` para fade-in na montagem
+- Promo bar com animacao de texto deslizante (marquee sutil)
 
 ### 2. `src/components/home/HeroBanner.tsx`
-- Wrap logo, titulo, subtitulo e CTA em `motion.div` com animacoes sequenciais (delay escalonado)
-- Logo: scale de 0.8 para 1 + fade
-- Texto: fade-up com delay 0.2s
-- CTA: fade-up com delay 0.4s
+- Logo muito maior: `h-32 md:h-44`
+- Adicionar circulos flutuantes animados com framer-motion (3-4 blobs de `bg-white/5` e `bg-accent/10` com animate float infinito)
+- Adicionar efeito glassmorphism card atras do conteudo central: `bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-3xl`
+- Shimmer divider mais largo (`w-32`)
+- Particulas/sparkles sutis com keyframes CSS
+- Mais padding vertical (`py-16 md:py-28`)
 
-### 3. `src/components/home/CategoryGrid.tsx`
-- Titulo da secao: fade-in ao entrar no viewport (`whileInView`)
-- Cada card de categoria: `motion.div` com stagger de 0.08s entre cards usando `variants` + `staggerChildren`
-- Hover: `whileHover={{ scale: 1.05, y: -2 }}` (substitui CSS hover)
+### 3. `src/components/layout/Footer.tsx`
+- Logo maior: `h-14 md:h-16`
+- Remover `brightness-0 invert` — usar `opacity-90` para manter o logo mais visivel
 
-### 4. `src/components/home/TrustBanner.tsx`
-- Container: `whileInView` fade-up
-- Cada item: stagger de 0.1s com fade + slide lateral
+### 4. `src/index.css`
+- Adicionar keyframe `float` para os blobs flutuantes do hero
+- Adicionar keyframe `sparkle` para particulas
 
-### 5. `src/components/home/FeaturedProducts.tsx`
-- Titulo: fade-in `whileInView`
-- Grid de produtos: `staggerChildren: 0.1` — cada card entra com fade-up sequencial
-
-### 6. `src/components/product/ProductCard.tsx`
-- Wrap o `Link` em `motion.div` com `whileHover={{ y: -4 }}` e `whileInView` fade-up
-- Botao de adicionar: `whileTap={{ scale: 0.9 }}` para feedback tatil
-
-### Padrao de animacao
-Todas as secoes usam `whileInView` com `viewport={{ once: true, margin: '-50px' }}` para animar apenas na primeira vez que entram no viewport. Stagger containers usam variants:
-```
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
-const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
-```
-
-## Arquivos
-
-| Arquivo | Acao |
-|---------|------|
-| `package.json` | Adicionar framer-motion |
-| `src/components/home/HeroBanner.tsx` | Animacoes sequenciais |
-| `src/components/home/CategoryGrid.tsx` | Stagger nos cards |
-| `src/components/home/TrustBanner.tsx` | Fade-up com stagger |
-| `src/components/home/FeaturedProducts.tsx` | Stagger nos produtos |
-| `src/components/product/ProductCard.tsx` | whileHover + whileTap |
+## Resultado
+Header com glassmorphism translucido sobre vermelho, hero com blobs flutuantes animados e card glass central dando profundidade, logos visivelmente maiores em todos os pontos. Tudo mantendo a essencia vermelha da marca.
 
