@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, MapPin, Printer, ChefHat, Truck, CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { Phone, MapPin, Printer, ChefHat, Truck, CheckCircle, Clock, XCircle, AlertTriangle, MessageCircle, Pencil, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import OrderReceiptPrint from '@/components/admin/OrderReceiptPrint';
+import OrderEditDialog from '@/components/admin/OrderEditDialog';
+import OrderListPrint from '@/components/admin/OrderListPrint';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Order = Tables<'orders'>;
@@ -74,10 +76,15 @@ const nextStatus: Record<string, { label: string; next: string; icon: React.Elem
   out_for_delivery: { label: 'Marcar Entregue', next: 'delivered', icon: CheckCircle },
 };
 
+const formatWhatsAppNumber = (phone: string) => phone.replace(/\D/g, '');
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [showListPrint, setShowListPrint] = useState(false);
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -96,10 +103,7 @@ const AdminOrders = () => {
       .channel('admin-orders')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
         setOrders((prev) => [payload.new as Order, ...prev]);
-        // Play notification sound
-        try {
-          audioRef.current?.play();
-        } catch {}
+        try { audioRef.current?.play(); } catch {}
         toast({
           title: '🔔 Novo Pedido!',
           description: `Pedido #${(payload.new as Order).order_number} recebido`,
@@ -119,19 +123,41 @@ const AdminOrders = () => {
 
   const handlePrint = (order: Order) => {
     setPrintOrder(order);
+    setShowListPrint(false);
     setTimeout(() => window.print(), 200);
+  };
+
+  const handlePrintList = () => {
+    setPrintOrder(null);
+    setShowListPrint(true);
+    setTimeout(() => window.print(), 200);
+  };
+
+  const openWhatsApp = (order: Order) => {
+    const phone = formatWhatsAppNumber(order.customer_phone);
+    const msg = encodeURIComponent(`Olá ${order.customer_name}! Sobre seu pedido #${order.order_number} na Bruna Perfumaria 🌸`);
+    window.open(`https://wa.me/55${phone}?text=${msg}`, '_blank');
+  };
+
+  const openEdit = (order: Order) => {
+    setEditOrder(order);
+    setEditOpen(true);
   };
 
   const filtered = activeTab === 'all' ? orders : orders.filter((o) => o.order_status === activeTab);
 
   return (
     <div className="space-y-4">
-      {/* Notification sound - short beep data URI */}
       <audio ref={audioRef} preload="auto" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipuzq49hO0FZcYyltaV2TDQ+WXOKnquggGhNQlRtgpOfoJuJdmZbX2t7ipWYlY+IgX15dn2DhoeHhYF8d3V1d3t/g4WFg4B8eXh4eXt9f4GCgoF/fXx7e3x9fn+AgIB/fn19fX1+fn9/f39/fn5+fn5+fn5/f39/f39/fn5+fn5+fn5/f39/f39/fn5+fn5+fn9/f39/f39+fn5+fn5+f39/f39/f35+fn5+fn5/f39/f39/fn5+fn5+fn9/f39/f39+fn5+fn5+f39/f39/f35+fn5+fn5/f39/f39+fn5+fn5+fn9/f39/f39+fn4=" />
 
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold font-sans">Pedidos</h2>
-        <span className="text-sm text-muted-foreground">{orders.length} pedidos</span>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handlePrintList}>
+            <List className="h-4 w-4 mr-1" /> Imprimir Lista
+          </Button>
+          <span className="text-sm text-muted-foreground">{orders.length} pedidos</span>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -184,7 +210,6 @@ const AdminOrders = () => {
                     </CardHeader>
 
                     <CardContent className="space-y-3 pt-0">
-                      {/* Customer */}
                       <div className="flex items-start gap-3 text-sm">
                         <div className="flex-1">
                           <p className="font-semibold">{order.customer_name}</p>
@@ -208,7 +233,6 @@ const AdminOrders = () => {
                         )}
                       </div>
 
-                      {/* Items */}
                       <div className="border rounded-lg overflow-hidden">
                         <table className="w-full text-sm">
                           <thead className="bg-muted/50">
@@ -230,7 +254,6 @@ const AdminOrders = () => {
                         </table>
                       </div>
 
-                      {/* Totals */}
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between text-muted-foreground">
                           <span>Subtotal</span>
@@ -246,14 +269,12 @@ const AdminOrders = () => {
                         </div>
                       </div>
 
-                      {/* Change info */}
                       {order.payment_method === 'dinheiro_entrega' && order.needs_change && order.change_for && (
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-sm text-amber-800">
                           💵 Troco para: <strong>R$ {Number(order.change_for).toFixed(2)}</strong>
                         </div>
                       )}
 
-                      {/* Notes */}
                       {order.notes && (
                         <div className="bg-muted rounded-lg p-2 text-sm text-muted-foreground">
                           📝 {order.notes}
@@ -261,7 +282,7 @@ const AdminOrders = () => {
                       )}
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 pt-2">
+                      <div className="flex items-center gap-2 pt-2 flex-wrap">
                         {action && (
                           <Button
                             onClick={() => updateStatus(order.id, action.next)}
@@ -272,6 +293,12 @@ const AdminOrders = () => {
                             {action.label}
                           </Button>
                         )}
+                        <Button variant="outline" size="sm" onClick={() => openWhatsApp(order)} className="text-green-600 border-green-200 hover:bg-green-50">
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openEdit(order)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => handlePrint(order)}>
                           <Printer className="h-4 w-4" />
                         </Button>
@@ -295,6 +322,14 @@ const AdminOrders = () => {
         </TabsContent>
       </Tabs>
 
+      {/* Edit Dialog */}
+      <OrderEditDialog
+        order={editOrder}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={fetchOrders}
+      />
+
       {/* Hidden print receipt */}
       {printOrder && (
         <OrderReceiptPrint
@@ -316,6 +351,9 @@ const AdminOrders = () => {
           }}
         />
       )}
+
+      {/* Hidden print list */}
+      {showListPrint && <OrderListPrint orders={filtered} />}
     </div>
   );
 };
