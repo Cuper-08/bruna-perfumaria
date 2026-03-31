@@ -1,28 +1,17 @@
 
 
-# Atualizar Logo no Header e Hero
+# Atualizar Logo e Texto do Hero
 
-## O que muda
+## Alterações
 
-O logo atual (`bruna-logo.webp`) esta sendo exibido com `rounded-full` (circular) e borda. O usuario quer usar a nova imagem de logo (com fundo transparente, texto cursivo "Bruna Perfumaria") sem recorte circular, mantendo o formato original.
+### 1. Substituir o logo
+- Copiar `user-uploads://WhatsApp_Image_2026-03-30_at_13.30.49-removebg-preview.png` para `src/assets/bruna-logo.png` (sobrescreve o atual)
+- O logo já é branco com fundo transparente — perfeito para o fundo vermelho
 
-## Alteracoes
+### 2. `src/components/home/HeroBanner.tsx` — linha 30
+- Trocar o texto `Perfumes importados, maquiagem e skincare com entrega rápida por motoboy 🛵` por `Qualidade e beleza em um só lugar.`
 
-### 1. Copiar novo logo
-- Copiar `user-uploads://...Editado-2.png` para `src/assets/bruna-logo.png`
-
-### 2. `src/components/layout/Header.tsx`
-- Trocar import para o novo logo
-- Remover `rounded-full`, `border-2`, `border-white/30` da img
-- Remover o bloco de texto "Bruna" + "Perfumaria" (o logo ja contem o nome)
-- Ajustar tamanho: `h-10 md:h-12 w-auto object-contain`
-
-### 3. `src/components/home/HeroBanner.tsx`
-- Trocar import para o novo logo
-- Remover `rounded-full`, `border-4`, `border-white/30` da img
-- Ajustar tamanho: `h-28 md:h-40 w-auto object-contain`
-- Manter animacao `animate-scale-in`
-
-## Resultado
-Logo exibido no formato original (retangular/cursivo) sobre o fundo vermelho primary, sem moldura circular.
+### Arquivos
+- `src/assets/bruna-logo.png` — substituído
+- `src/components/home/HeroBanner.tsx` — texto atualizado
 
