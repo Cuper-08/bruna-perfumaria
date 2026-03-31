@@ -14,6 +14,10 @@ const ProductPage = () => {
   const { addItem } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
     queryFn: async () => {
