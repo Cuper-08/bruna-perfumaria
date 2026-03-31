@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import Header from './Header';
+
 import Footer from './Footer';
 import WhatsAppButton from './WhatsAppButton';
 import BottomNavBar from './BottomNavBar';
