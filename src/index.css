@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 30 25% 98%;
     --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
@@ -28,8 +28,8 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
+    --border: 30 15% 92%;
+    --input: 30 15% 92%;
     --ring: 355 78% 52%;
 
     --radius: 0.75rem;
@@ -49,7 +49,7 @@
     --bruna-gold: 38 72% 52%;
     --bruna-cream: 30 25% 98%;
     --bruna-rose: 350 55% 88%;
-    --bruna-dark: 0 0% 12%;
+    --bruna-dark: 0 0% 10%;
   }
 
   .dark {
@@ -117,6 +117,10 @@
   .glass-primary {
     @apply backdrop-blur-xl bg-primary/90 border border-white/20 shadow-2xl;
   }
+
+  .premium-divider {
+    @apply h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent;
+  }
 }
 
 /* Premium animations */
@@ -140,6 +144,11 @@
   50% { opacity: 0.7; }
 }
 
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 8px hsl(38 72% 52% / 0.2); }
+  50% { box-shadow: 0 0 20px hsl(38 72% 52% / 0.4); }
+}
+
 .animate-shimmer {
   background: linear-gradient(
     90deg,
@@ -161,6 +170,10 @@
 
 .animate-pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
 }
 
 /* Staggered children animation */

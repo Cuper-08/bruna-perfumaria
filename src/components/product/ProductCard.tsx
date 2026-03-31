@@ -26,39 +26,39 @@ const ProductCard = ({ id, title, slug, price, image, featured }: ProductCardPro
   return (
     <Link
       to={`/produto/${slug}`}
-      className="group bg-card rounded-2xl border border-border/60 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative"
+      className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-400 hover:-translate-y-1 relative border border-border/30"
     >
       {featured && (
-        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-[10px] font-semibold shadow-md">
+        <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-[10px] font-semibold shadow-md tracking-wide">
           <Star className="h-3 w-3 fill-current" />
           Destaque
         </div>
       )}
 
-      <div className="aspect-square bg-muted overflow-hidden">
+      <div className="aspect-[3/4] bg-muted overflow-hidden">
         <img
           src={image || '/placeholder.svg'}
           alt={title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
           loading="lazy"
         />
       </div>
 
-      <div className="p-3">
-        <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-2 min-h-[2.5rem] leading-tight">
+      <div className="p-3.5">
+        <h3 className="text-sm font-medium text-foreground/85 line-clamp-2 mb-2.5 min-h-[2.5rem] leading-snug">
           {title}
         </h3>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-base font-bold text-primary">
+          <span className="text-base font-bold text-primary tracking-tight">
             R$ {price.toFixed(2).replace('.', ',')}
           </span>
           <Button
             size="icon"
-            className="h-8 w-8 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 shrink-0"
+            className="h-8 w-8 rounded-full bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 shrink-0"
             variant="ghost"
             onClick={handleAdd}
           >
-            <ShoppingBag className="h-4 w-4" />
+            <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
           </Button>
         </div>
       </div>

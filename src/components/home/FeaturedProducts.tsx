@@ -20,15 +20,11 @@ const FeaturedProducts = () => {
 
   if (isLoading) {
     return (
-      <section className="py-8">
+      <section className="py-10">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="font-display text-xl font-semibold">Destaques</h2>
-            <div className="flex-1 h-px bg-gradient-to-r from-accent/50 to-transparent" />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-2xl" />
+              <Skeleton key={i} className="h-72 rounded-2xl" />
             ))}
           </div>
         </div>
@@ -39,13 +35,29 @@ const FeaturedProducts = () => {
   if (!products?.length) return null;
 
   return (
-    <section className="py-8">
+    <section className="py-10">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-3 mb-6">
-          <h2 className="font-display text-xl font-semibold">Destaques</h2>
-          <div className="flex-1 h-px bg-gradient-to-r from-accent/50 to-transparent" />
+        {/* Section title with ornaments */}
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-px bg-accent/40" />
+            <div className="w-1.5 h-1.5 rounded-full bg-accent/50" />
+          </div>
+          <div className="text-center">
+            <h2 className="font-display text-xl md:text-2xl font-semibold tracking-wide">
+              Destaques
+            </h2>
+            <p className="text-[11px] text-muted-foreground tracking-widest uppercase mt-1">
+              Selecionados para você
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent/50" />
+            <div className="w-8 h-px bg-accent/40" />
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 stagger-children">
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 stagger-children">
           {products.map(p => (
             <ProductCard
               key={p.id}
