@@ -187,6 +187,48 @@ export type Database = {
           },
         ]
       }
+      store_customization: {
+        Row: {
+          footer_address: string | null
+          footer_hours: Json | null
+          footer_phone: string | null
+          hero_cta_link: string | null
+          hero_cta_text: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          promo_bar_text: string | null
+          whatsapp_message: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          footer_address?: string | null
+          footer_hours?: Json | null
+          footer_phone?: string | null
+          hero_cta_link?: string | null
+          hero_cta_text?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          promo_bar_text?: string | null
+          whatsapp_message?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          footer_address?: string | null
+          footer_hours?: Json | null
+          footer_phone?: string | null
+          hero_cta_link?: string | null
+          hero_cta_text?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          promo_bar_text?: string | null
+          whatsapp_message?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
