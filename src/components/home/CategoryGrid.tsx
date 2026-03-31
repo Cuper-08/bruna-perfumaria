@@ -1,11 +1,18 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, Palette, Scissors, Heart, Droplets, Leaf, Package } from 'lucide-react';
+import { Gem, Brush, Wind, Flower2, Leaf, ShieldCheck, Package } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Sparkles, Palette, Scissors, Heart, Droplets, Leaf, Package,
+const iconMap: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  Sparkles: Gem,
+  Palette: Brush,
+  Scissors: Wind,
+  Heart: Flower2,
+  Droplets: Leaf,
+  Leaf: ShieldCheck,
+  Gem, Brush, Wind, Flower2, ShieldCheck,
+  Package,
 };
 
 const CategoryGrid = () => {
@@ -25,10 +32,10 @@ const CategoryGrid = () => {
     return (
       <section className="py-8">
         <div className="container mx-auto px-4">
-          <h2 className="font-display text-xl font-semibold mb-5">Categorias</h2>
+          <h2 className="font-display text-lg font-semibold mb-5 tracking-wide text-foreground/80">Categorias</h2>
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-20 rounded-2xl shrink-0" />
+              <Skeleton key={i} className="h-24 w-24 rounded-2xl shrink-0" />
             ))}
           </div>
         </div>
@@ -39,7 +46,7 @@ const CategoryGrid = () => {
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
-        <h2 className="font-display text-xl font-semibold mb-5">Categorias</h2>
+        <h2 className="font-display text-lg font-semibold mb-5 tracking-wide text-foreground/80">Categorias</h2>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 stagger-children md:grid md:grid-cols-6 md:overflow-visible">
           {categories?.map(cat => {
             const Icon = iconMap[cat.icon || 'Package'] || Package;
@@ -47,12 +54,12 @@ const CategoryGrid = () => {
               <Link
                 key={cat.id}
                 to={`/categoria/${cat.slug}`}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass shrink-0 min-w-[76px] hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 group"
+                className="flex flex-col items-center gap-2 p-4 rounded-2xl shrink-0 min-w-[84px] bg-card/80 backdrop-blur-sm border border-white/40 shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300 group"
               >
-                <div className="p-2.5 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                  <Icon className="h-5 w-5 text-primary" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/15 to-pink-200/30 group-hover:from-primary/25 group-hover:to-pink-200/50 transition-all duration-300 shadow-inner">
+                  <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
                 </div>
-                <span className="text-[11px] font-medium text-foreground/70 whitespace-nowrap">{cat.name}</span>
+                <span className="text-xs font-medium tracking-wide text-foreground/70 whitespace-nowrap">{cat.name}</span>
               </Link>
             );
           })}
