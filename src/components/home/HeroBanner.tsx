@@ -21,7 +21,7 @@ const HeroBanner = () => {
   const ctaLink = customization?.hero_cta_link || '/categoria/perfumes';
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/85">
+    <section className="relative overflow-x-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/85" style={{ overflow: 'clip visible', overflowX: 'clip' }}>
       {/* Floating blobs */}
       {floatingBlobs.map((blob, i) => (
         <motion.div
