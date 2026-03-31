@@ -259,6 +259,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      search_products: {
+        Args: { search_term: string }
+        Returns: {
+          active: boolean | null
+          category_id: string | null
+          created_at: string | null
+          description: string | null
+          featured: boolean | null
+          id: string
+          images: string[] | null
+          price: number
+          slug: string
+          title: string
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "manager"
