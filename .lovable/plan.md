@@ -1,101 +1,53 @@
 
 
-# Redesign Premium — Bruna Perfumaria
+# Animacoes com Framer Motion — Home Premium
 
-Inspiracao: Sephora, Charlotte Tilbury, MAC Cosmetics, Boticario Premium. Lojas de beleza premium usam fundo escuro ou off-white com tipografia elegante, espacamento generoso, detalhes dourados e micro-animacoes sofisticadas.
-
-## Diagnostico Atual
-
-A loja parece generica porque:
-- Hero e header sao um bloco vermelho solido sem profundidade
-- Cards de produto sao basicos (borda + imagem + preco)
-- Nao ha hierarquia visual clara — tudo tem o mesmo peso
-- Footer usa o logo antigo (`bruna-logo.webp`)
-- Falta seccoes de confianca (frete, pagamento, garantia)
-- Categorias parecem chips genericos
+## Resumo
+Instalar `framer-motion` e adicionar animacoes de entrada (scroll-triggered) nas secoes da home e cards de produto. Cada secao aparece com fade-up ao entrar no viewport. Cards de produto e categorias entram com stagger (um apos o outro).
 
 ## Alteracoes
 
-### 1. `src/index.css` — Refinar tokens de cor e adicionar utilitarios premium
-- Fundo principal: creme suave (`--background: 30 25% 98%`) em vez de branco puro
-- Adicionar animacao `fade-up-stagger` e `glow` para efeito de brilho dourado
-- Novo utilitario `.premium-divider` (linha dourada decorativa)
+### 1. Instalar `framer-motion`
+- `npm install framer-motion`
 
-### 2. `src/components/layout/Header.tsx` — Header premium
-- Barra superior fina com texto "Frete gratis acima de R$199" em dourado
-- Header principal mais limpo: logo centralizado, nav com hover underline animado
-- Sombra mais suave, backdrop-blur no scroll
+### 2. `src/components/home/HeroBanner.tsx`
+- Wrap logo, titulo, subtitulo e CTA em `motion.div` com animacoes sequenciais (delay escalonado)
+- Logo: scale de 0.8 para 1 + fade
+- Texto: fade-up com delay 0.2s
+- CTA: fade-up com delay 0.4s
 
-### 3. `src/components/home/HeroBanner.tsx` — Hero sofisticado
-- Gradiente mais profundo com overlay escuro sutil
-- Tipografia maior e mais espacada
-- Remover barra de busca do hero (ja tem no header)
-- Adicionar CTA "Ver colecao" com botao dourado
-- Shimmer divider mais largo
+### 3. `src/components/home/CategoryGrid.tsx`
+- Titulo da secao: fade-in ao entrar no viewport (`whileInView`)
+- Cada card de categoria: `motion.div` com stagger de 0.08s entre cards usando `variants` + `staggerChildren`
+- Hover: `whileHover={{ scale: 1.05, y: -2 }}` (substitui CSS hover)
 
-### 4. `src/components/home/CategoryGrid.tsx` — Categorias premium
-- Cards maiores com fundo gradiente rosa-para-branco
-- Icones com cor dourada em vez de vermelho
-- Efeito hover com glow dourado sutil
-- Titulo da secao com detalhe decorativo
+### 4. `src/components/home/TrustBanner.tsx`
+- Container: `whileInView` fade-up
+- Cada item: stagger de 0.1s com fade + slide lateral
 
-### 5. `src/components/home/FeaturedProducts.tsx` — Secao de destaques
-- Titulo com ornamento dourado bilateral
-- Subtitulo descritivo
-- Grid com gap maior para respirar
+### 5. `src/components/home/FeaturedProducts.tsx`
+- Titulo: fade-in `whileInView`
+- Grid de produtos: `staggerChildren: 0.1` — cada card entra com fade-up sequencial
 
-### 6. `src/components/product/ProductCard.tsx` — Card de produto premium
-- Sombra mais suave e hover com elevacao
-- Badge "Destaque" redesenhado com dourado
-- Preco com estilo mais elegante (fonte maior, cor primary)
-- Botao de adicionar com efeito de transicao mais sofisticado
-- Borda quase invisivel, sombra sutil
+### 6. `src/components/product/ProductCard.tsx`
+- Wrap o `Link` em `motion.div` com `whileHover={{ y: -4 }}` e `whileInView` fade-up
+- Botao de adicionar: `whileTap={{ scale: 0.9 }}` para feedback tatil
 
-### 7. `src/components/home/TrustBanner.tsx` (NOVO)
-- Faixa entre categorias e destaques
-- 3-4 icones: "Frete Gratis +R$199", "Parcele em 3x", "Produtos Originais", "Troca Facil"
-- Estilo minimalista com icones finos e texto pequeno
-
-### 8. `src/pages/Index.tsx` — Incluir TrustBanner
-- Adicionar entre CategoryGrid e FeaturedProducts
-
-### 9. `src/components/layout/Footer.tsx` — Footer atualizado
-- Usar o logo correto (`bruna-logo.png`)
-- Visual mais escuro e elegante
-- Separador dourado
-
-### 10. `src/components/layout/BottomNavBar.tsx` — Nav inferior premium
-- Fundo com blur mais forte e borda superior dourada fina
-- Icones com transicao mais suave
-- Indicador ativo: ponto dourado
-
-### 11. `src/pages/ProductPage.tsx` — Pagina de produto refinada
-- Galeria com bordas arredondadas e sombra suave
-- Secao de detalhes com espacamento generoso
-- Botao CTA maior com efeito hover dourado
-- Breadcrumb mais discreto
-
-### 12. `src/pages/CategoryPage.tsx` — Pagina de categoria
-- Header da categoria com fundo gradiente sutil
-- Filtros com visual mais clean
+### Padrao de animacao
+Todas as secoes usam `whileInView` com `viewport={{ once: true, margin: '-50px' }}` para animar apenas na primeira vez que entram no viewport. Stagger containers usam variants:
+```
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
+```
 
 ## Arquivos
 
 | Arquivo | Acao |
 |---------|------|
-| `src/index.css` | Atualizar tokens + utilitarios |
-| `src/components/layout/Header.tsx` | Redesign com barra superior |
-| `src/components/home/HeroBanner.tsx` | Hero premium |
-| `src/components/home/CategoryGrid.tsx` | Cards com dourado |
-| `src/components/home/FeaturedProducts.tsx` | Secao refinada |
-| `src/components/product/ProductCard.tsx` | Card premium |
-| `src/components/home/TrustBanner.tsx` | Criar novo |
-| `src/pages/Index.tsx` | Adicionar TrustBanner |
-| `src/components/layout/Footer.tsx` | Atualizar logo + visual |
-| `src/components/layout/BottomNavBar.tsx` | Refinar nav |
-| `src/pages/ProductPage.tsx` | Layout premium |
-| `src/pages/CategoryPage.tsx` | Header + filtros |
-
-## Resultado
-Visual que transmite luxo e confianca — fundo creme, detalhes dourados, tipografia elegante, espacamento generoso e micro-animacoes que elevam a experiencia de compra ao nivel Sephora/Boticario.
+| `package.json` | Adicionar framer-motion |
+| `src/components/home/HeroBanner.tsx` | Animacoes sequenciais |
+| `src/components/home/CategoryGrid.tsx` | Stagger nos cards |
+| `src/components/home/TrustBanner.tsx` | Fade-up com stagger |
+| `src/components/home/FeaturedProducts.tsx` | Stagger nos produtos |
+| `src/components/product/ProductCard.tsx` | whileHover + whileTap |
 
