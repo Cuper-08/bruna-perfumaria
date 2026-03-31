@@ -85,7 +85,7 @@ const HeroBanner = () => {
           </motion.div>
 
           <motion.div
-            className="w-32 h-px animate-shimmer rounded-full mb-6"
+            className="w-32 h-px animate-shimmer rounded-full mb-3"
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.8, delay: 0.3 }}
