@@ -100,7 +100,7 @@ const HeroBanner = () => {
             {heroTitle}
           </motion.h1>
           <motion.p
-            className="text-primary-foreground/65 text-sm md:text-base mb-8 tracking-wide"
+            className="text-primary-foreground/65 text-sm md:text-base mb-5 tracking-wide"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.35 }}
