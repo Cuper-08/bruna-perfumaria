@@ -27,7 +27,7 @@ const HeroBanner = () => {
             Beleza, fragrância e cuidado
           </h1>
           <p className="text-primary-foreground/75 text-sm md:text-base mb-6 max-w-md animate-fade-in">
-            Perfumes importados, maquiagem e skincare com entrega rápida por motoboy 🛵
+            Qualidade e beleza em um só lugar.
           </p>
 
           {/* Gold shimmer divider */}
