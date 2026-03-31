@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import brunaLogo from '@/assets/bruna-logo.png';
 import { useStoreCustomization } from '@/hooks/useStoreCustomization';
+import HeroSearchBar from './HeroSearchBar';
 
 const floatingBlobs = [
   { size: 'w-72 h-72', pos: '-top-20 -right-20', bg: 'bg-white/[0.04]', duration: 7, delay: 0 },
@@ -120,6 +121,15 @@ const HeroBanner = () => {
               {ctaText}
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </Link>
+          </motion.div>
+
+          <motion.div
+            className="w-full mt-5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <HeroSearchBar />
           </motion.div>
         </motion.div>
       </div>

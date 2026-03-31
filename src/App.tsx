@@ -9,6 +9,7 @@ import CategoryPage from "./pages/CategoryPage";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import NotFound from "./pages/NotFound";
+import SearchPage from "./pages/SearchPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminAuthLayout from "./components/admin/AdminAuthLayout";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/categoria/:slug" element={<CategoryPage />} />
             <Route path="/produto/:slug" element={<ProductPage />} />
             <Route path="/carrinho" element={<CartPage />} />
+            <Route path="/busca" element={<SearchPage />} />
 
             {/* Admin Routes */}
             <Route element={<AdminAuthLayout />}>
