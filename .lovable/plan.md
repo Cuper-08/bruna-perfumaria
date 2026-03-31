@@ -1,36 +1,23 @@
 
 
-# Header, Hero e Footer — Logos Maiores + Glassmorphism + Animacoes
+# Remover Header e Glass Card da Hero
 
-## Problema
-- Logos no header (h-10), hero (h-24) e footer (h-10) estao muito pequenas
-- Header e hero sao blocos vermelho solido estaticos, sem vida
-- Falta glassmorphism, particulas flutuantes e micro-animacoes que deem energia
+## O que muda
+
+O usuario quer remover o Header (barra de navegacao superior) e o "glass card" (moldura com fundo translucido e borda) que envolve o conteudo central da Hero. O conteudo (logo, texto, botao) fica direto sobre o gradiente vermelho, como no print.
 
 ## Alteracoes
 
-### 1. `src/components/layout/Header.tsx`
-- Logo maior: `h-12 md:h-14`
-- Adicionar glassmorphism: `bg-primary/80 backdrop-blur-xl` com borda inferior `border-b border-white/10`
-- Wrap com `motion.header` para fade-in na montagem
-- Promo bar com animacao de texto deslizante (marquee sutil)
+### 1. `src/components/layout/StoreLayout.tsx`
+- Remover o `<Header />` do layout (linha 15)
+- Remover o import do Header
 
 ### 2. `src/components/home/HeroBanner.tsx`
-- Logo muito maior: `h-32 md:h-44`
-- Adicionar circulos flutuantes animados com framer-motion (3-4 blobs de `bg-white/5` e `bg-accent/10` com animate float infinito)
-- Adicionar efeito glassmorphism card atras do conteudo central: `bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-3xl`
-- Shimmer divider mais largo (`w-32`)
-- Particulas/sparkles sutis com keyframes CSS
-- Mais padding vertical (`py-16 md:py-28`)
-
-### 3. `src/components/layout/Footer.tsx`
-- Logo maior: `h-14 md:h-16`
-- Remover `brightness-0 invert` — usar `opacity-90` para manter o logo mais visivel
-
-### 4. `src/index.css`
-- Adicionar keyframe `float` para os blobs flutuantes do hero
-- Adicionar keyframe `sparkle` para particulas
+- Remover o glass card wrapper (`bg-white/[0.07] backdrop-blur-sm border border-white/10 rounded-3xl`) da linha 62
+- Substituir por um `motion.div` simples sem fundo, sem borda, sem backdrop — apenas `flex flex-col items-center text-center max-w-lg mx-auto px-6 py-10`
+- Manter todo o conteudo interno (logo, shimmer, titulo, subtitulo, CTA) e suas animacoes
+- Manter os blobs flutuantes e sparkles no fundo
 
 ## Resultado
-Header com glassmorphism translucido sobre vermelho, hero com blobs flutuantes animados e card glass central dando profundidade, logos visivelmente maiores em todos os pontos. Tudo mantendo a essencia vermelha da marca.
+Hero limpa com conteudo centralizado direto sobre o gradiente vermelho, sem moldura glass e sem header acima.
 
