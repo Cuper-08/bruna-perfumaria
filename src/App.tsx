@@ -9,6 +9,7 @@ import CategoryPage from "./pages/CategoryPage";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import NotFound from "./pages/NotFound";
+import SearchPage from "./pages/SearchPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminAuthLayout from "./components/admin/AdminAuthLayout";
 import AdminLayout from "./components/admin/AdminLayout";
