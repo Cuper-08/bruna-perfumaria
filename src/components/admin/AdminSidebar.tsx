@@ -1,18 +1,10 @@
-import { LayoutDashboard, ShoppingBag, Package, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Package, Settings, LogOut, Palette, Tag } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import brunaLogo from '@/assets/bruna-logo.webp';
@@ -21,6 +13,8 @@ const items = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Pedidos', url: '/admin/pedidos', icon: ShoppingBag },
   { title: 'Produtos', url: '/admin/produtos', icon: Package },
+  { title: 'Categorias', url: '/admin/categorias', icon: Tag },
+  { title: 'Aparência', url: '/admin/aparencia', icon: Palette },
   { title: 'Configurações', url: '/admin/config', icon: Settings },
 ];
 

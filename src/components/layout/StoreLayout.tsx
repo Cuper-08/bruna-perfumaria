@@ -4,12 +4,16 @@ import Footer from './Footer';
 import WhatsAppButton from './WhatsAppButton';
 import BottomNavBar from './BottomNavBar';
 import FloatingCart from './FloatingCart';
+import { useStoreCustomization } from '@/hooks/useStoreCustomization';
 
 interface StoreLayoutProps {
   children: ReactNode;
 }
 
 const StoreLayout = ({ children }: StoreLayoutProps) => {
+  const { data: customization } = useStoreCustomization();
+  const promoText = customization?.promo_bar_text || '✨ Frete grátis acima de R$199 • Parcele em até 3x';
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Promo bar marquee */}
@@ -19,7 +23,7 @@ const StoreLayout = ({ children }: StoreLayoutProps) => {
           animate={{ x: ['0%', '-50%'] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
         >
-          ✨ Frete grátis acima de R$199 • Parcele em até 3x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Frete grátis acima de R$199 • Parcele em até 3x
+          {promoText} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {promoText}
         </motion.p>
       </div>
 
