@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { ShoppingBag, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useState, useEffect } from 'react';
-import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const ProductPage = () => {
