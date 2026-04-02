@@ -1,73 +1,75 @@
 
 
-# Barra de Pesquisa Premium na Hero + Pagina de Resultados
+# Checkout Inteligente e Moderno — Bruna Perfumaria
 
 ## Resumo
-Adicionar uma barra de pesquisa estilizada abaixo do botao "Ver Colecao" na hero, com busca inteligente (case-insensitive, accent-insensitive) que funciona para 1000+ produtos. Ao digitar, mostra sugestoes em dropdown. Ao confirmar, navega para uma pagina de resultados.
+Criar uma pagina de checkout multi-step com visual premium, preparada para integracao com ASAAS (que sera feita via Claude Code). O checkout coleta dados do cliente, endereco, metodo de pagamento e cria o pedido no Supabase. Nao implementa gateway — apenas salva o pedido com o metodo escolhido.
+
+## Fluxo do Checkout (3 steps)
+
+```text
+[1. Dados Pessoais] → [2. Endereco] → [3. Pagamento + Resumo]
+```
 
 ## Alteracoes
 
-### 1. Migration: extensao `unaccent` + funcao de busca
-```sql
-CREATE EXTENSION IF NOT EXISTS unaccent;
+### 1. Novo: `src/pages/CheckoutPage.tsx`
+Pagina principal com stepper visual (3 etapas com indicador de progresso animado).
 
-CREATE OR REPLACE FUNCTION public.search_products(search_term text)
-RETURNS SETOF products
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT * FROM products
-  WHERE active = true
-    AND (
-      unaccent(lower(title)) ILIKE '%' || unaccent(lower(search_term)) || '%'
-      OR unaccent(lower(description)) ILIKE '%' || unaccent(lower(search_term)) || '%'
-    )
-  ORDER BY
-    CASE WHEN unaccent(lower(title)) ILIKE unaccent(lower(search_term)) || '%' THEN 0 ELSE 1 END,
-    title
-  LIMIT 50;
-$$;
-```
-Isso garante busca sem acento, sem case sensitivity, e prioriza matches no inicio do titulo.
+**Step 1 — Dados Pessoais:**
+- Nome completo (obrigatorio)
+- Telefone com mascara (obrigatorio)
+- CPF com mascara (opcional, necessario para PIX)
+- Observacoes do pedido (textarea opcional)
 
-### 2. Novo: `src/components/home/HeroSearchBar.tsx`
-- Input com icone de lupa, estilo glassmorphism (`bg-white/15 backdrop-blur-md border border-white/20`)
-- Placeholder: "Buscar perfumes, maquiagem..."
-- Debounce de 300ms no input
-- Dropdown com ate 6 sugestoes (imagem thumbnail + titulo + preco)
-- Clique na sugestao navega para `/produto/:slug`
-- Enter ou clique na lupa navega para `/busca?q=termo`
-- Animacao fade-in com framer-motion
+**Step 2 — Endereco de Entrega:**
+- CEP (com auto-preenchimento via API ViaCEP)
+- Rua, Numero, Complemento, Bairro, Cidade
+- Taxa de entrega carregada do `admin_settings`
 
-### 3. Novo: `src/pages/SearchPage.tsx`
-- Le `?q=` da URL
-- Chama RPC `search_products` via Supabase
-- Grid de ProductCards com os resultados
-- Estado vazio: "Nenhum produto encontrado para '{termo}'"
-- Loading skeleton enquanto busca
+**Step 3 — Pagamento + Resumo:**
+- Selecao do metodo: PIX, Cartao Online, Dinheiro na Entrega, Cartao na Entrega
+- Se "Dinheiro na Entrega": campo "Troco para quanto?"
+- Resumo visual: lista de itens, subtotal, taxa entrega, total
+- Botao "Confirmar Pedido"
 
-### 4. `src/components/home/HeroBanner.tsx`
-- Importar e renderizar `<HeroSearchBar />` abaixo do botao CTA
-- Animacao stagger (delay 0.6s)
+**Ao confirmar:**
+- Insere na tabela `orders` com todos os campos
+- Para PIX/Cartao Online: `payment_status = 'pending'` (ASAAS processa depois)
+- Para pagamento na entrega: `payment_status = 'delivery_payment'`
+- Limpa o carrinho
+- Redireciona para pagina de confirmacao
 
-### 5. `src/App.tsx`
-- Adicionar rota `/busca` → `SearchPage`
+### 2. Novo: `src/pages/OrderConfirmationPage.tsx`
+- Exibe numero do pedido, status, resumo
+- Se PIX: area reservada para QR Code (preenchida pelo ASAAS depois)
+- Botao "Acompanhar Pedido" e "Voltar a Loja"
 
-### 6. Novo: `src/hooks/useProductSearch.ts`
-- Hook com TanStack Query que chama `supabase.rpc('search_products', { search_term })`
-- `enabled: term.length >= 2`
-- `staleTime: 30s` para cache
+### 3. Novo: `src/hooks/useViaCep.ts`
+- Hook que recebe CEP, faz fetch em `viacep.com.br/ws/{cep}/json`
+- Retorna rua, bairro, cidade, estado
+- Debounce de 500ms, ativa quando CEP tem 8 digitos
+
+### 4. `src/App.tsx`
+- Adicionar rotas `/checkout` e `/pedido/:id`
+
+### 5. Visual Premium
+- Stepper com circulos numerados conectados por linha, step ativo em vermelho com glow
+- Cards com `bg-card border border-border rounded-2xl shadow-sm`
+- Inputs com `rounded-xl` e labels elegantes
+- Animacoes framer-motion: fade entre steps, slide-in nos campos
+- Botoes "Proximo" e "Voltar" com transicoes suaves
+- Resumo lateral sticky no desktop, colapsavel no mobile
 
 ## Arquivos
 
 | Arquivo | Acao |
 |---------|------|
-| Migration SQL | Criar extensao unaccent + funcao RPC |
-| `src/components/home/HeroSearchBar.tsx` | Novo — barra de pesquisa premium |
-| `src/hooks/useProductSearch.ts` | Novo — hook de busca |
-| `src/pages/SearchPage.tsx` | Novo — pagina de resultados |
-| `src/components/home/HeroBanner.tsx` | Adicionar HeroSearchBar |
-| `src/App.tsx` | Adicionar rota /busca |
+| `src/pages/CheckoutPage.tsx` | Novo — checkout multi-step |
+| `src/pages/OrderConfirmationPage.tsx` | Novo — confirmacao do pedido |
+| `src/hooks/useViaCep.ts` | Novo — auto-preenchimento de endereco |
+| `src/App.tsx` | Adicionar rotas /checkout e /pedido/:id |
 
-## Resultado
-Barra de pesquisa premium com glassmorphism na hero, busca accent/case insensitive via Postgres `unaccent`, sugestoes em tempo real com debounce, e pagina de resultados completa — pronto para escalar com 1000+ produtos.
+## Nota sobre ASAAS
+O checkout salva o pedido com `payment_method` e `payment_status` corretos. A integracao com ASAAS (gerar PIX, cobrar cartao, webhooks) sera feita separadamente via Claude Code. O checkout ja deixa os campos `asaas_payment_id`, `pix_qr_code`, `pix_copy_paste` prontos para serem preenchidos pela edge function do ASAAS.
 
