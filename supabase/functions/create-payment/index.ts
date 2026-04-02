@@ -25,9 +25,6 @@ function cleanCpf(cpf: string) {
   return cpf.replace(/\D/g, '')
 }
 
-function cleanPhone(phone: string) {
-  return phone.replace(/\D/g, '')
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -84,7 +81,6 @@ Deno.serve(async (req) => {
         const customerRes = await asaasRequest('/customers', 'POST', {
           name: customer_name,
           cpfCnpj: cpf,
-          mobilePhone: cleanPhone(customer_phone),
           notificationDisabled: true,
         })
         if (customerRes.errors) {
