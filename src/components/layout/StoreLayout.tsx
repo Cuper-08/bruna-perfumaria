@@ -30,7 +30,7 @@ const StoreLayout = ({ children }: StoreLayoutProps) => {
       <main className="flex-1 pb-20 md:pb-0">{children}</main>
       <Footer />
       <WhatsAppButton />
-      <FloatingCart />
+      
       <BottomNavBar />
     </div>
   );
