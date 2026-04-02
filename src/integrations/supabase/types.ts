@@ -74,6 +74,7 @@ export type Database = {
       orders: {
         Row: {
           address: Json
+          asaas_customer_id: string | null
           asaas_payment_id: string | null
           change_for: number | null
           created_at: string | null
@@ -82,6 +83,7 @@ export type Database = {
           customer_phone: string
           delivery_fee: number
           id: string
+          invoice_url: string | null
           items: Json
           needs_change: boolean | null
           notes: string | null
@@ -89,12 +91,16 @@ export type Database = {
           order_status: Database["public"]["Enums"]["order_status_type"]
           payment_method: Database["public"]["Enums"]["payment_method_type"]
           payment_status: Database["public"]["Enums"]["payment_status_type"]
+          pix_copy_paste: string | null
+          pix_expire_date: string | null
+          pix_qr_code: string | null
           subtotal: number
           total: number
           updated_at: string | null
         }
         Insert: {
           address?: Json
+          asaas_customer_id?: string | null
           asaas_payment_id?: string | null
           change_for?: number | null
           created_at?: string | null
@@ -103,6 +109,7 @@ export type Database = {
           customer_phone: string
           delivery_fee?: number
           id?: string
+          invoice_url?: string | null
           items?: Json
           needs_change?: boolean | null
           notes?: string | null
@@ -110,12 +117,16 @@ export type Database = {
           order_status?: Database["public"]["Enums"]["order_status_type"]
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           payment_status?: Database["public"]["Enums"]["payment_status_type"]
+          pix_copy_paste?: string | null
+          pix_expire_date?: string | null
+          pix_qr_code?: string | null
           subtotal?: number
           total?: number
           updated_at?: string | null
         }
         Update: {
           address?: Json
+          asaas_customer_id?: string | null
           asaas_payment_id?: string | null
           change_for?: number | null
           created_at?: string | null
@@ -124,6 +135,7 @@ export type Database = {
           customer_phone?: string
           delivery_fee?: number
           id?: string
+          invoice_url?: string | null
           items?: Json
           needs_change?: boolean | null
           notes?: string | null
@@ -131,6 +143,9 @@ export type Database = {
           order_status?: Database["public"]["Enums"]["order_status_type"]
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           payment_status?: Database["public"]["Enums"]["payment_status_type"]
+          pix_copy_paste?: string | null
+          pix_expire_date?: string | null
+          pix_qr_code?: string | null
           subtotal?: number
           total?: number
           updated_at?: string | null
