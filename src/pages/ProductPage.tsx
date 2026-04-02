@@ -5,7 +5,6 @@ import StoreLayout from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, ChevronRight } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -40,7 +39,6 @@ const ProductPage = () => {
       price: Number(product.price),
       image: product.images?.[0] || '/placeholder.svg',
     });
-    toast.success(`${product.title} adicionado ao carrinho!`);
   };
 
   if (isLoading) {
