@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import Footer from './Footer';
 import WhatsAppButton from './WhatsAppButton';
 import BottomNavBar from './BottomNavBar';
-import FloatingCart from './FloatingCart';
+
 import { useStoreCustomization } from '@/hooks/useStoreCustomization';
 
 interface StoreLayoutProps {
