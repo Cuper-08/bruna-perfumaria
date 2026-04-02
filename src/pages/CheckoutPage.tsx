@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, User, MapPin, CreditCard, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, MapPin, CreditCard, Check, Loader2, LocateFixed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCart } from '@/contexts/CartContext';
 import { useViaCep } from '@/hooks/useViaCep';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const STEPS = [
   { id: 1, label: 'Dados', icon: User },
@@ -18,6 +19,7 @@ const STEPS = [
   { id: 3, label: 'Pagamento', icon: CreditCard },
 ];
 
+// ─── Masks ────────────────────────────────────────────────
 function maskPhone(v: string) {
   const d = v.replace(/\D/g, '').slice(0, 11);
   if (d.length <= 2) return `(${d}`;
@@ -39,6 +41,31 @@ function maskCep(v: string) {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+// ─── Validations ──────────────────────────────────────────
+function isValidCpf(cpf: string): boolean {
+  const c = cpf.replace(/\D/g, '');
+  if (c.length !== 11) return false;
+  if (/^(\d)\1+$/.test(c)) return false; // todos os dígitos iguais
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(c[i]) * (10 - i);
+  let d1 = (sum * 10) % 11;
+  if (d1 >= 10) d1 = 0;
+  if (d1 !== parseInt(c[9])) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(c[i]) * (11 - i);
+  let d2 = (sum * 10) % 11;
+  if (d2 >= 10) d2 = 0;
+  return d2 === parseInt(c[10]);
+}
+
+function hasFullName(name: string): boolean {
+  const parts = name.trim().split(/\s+/).filter(p => p.length >= 2);
+  return parts.length >= 2;
+}
+
+// ─── Types ────────────────────────────────────────────────
 type PaymentMethod = 'pix' | 'cartao_online' | 'dinheiro_entrega' | 'cartao_entrega';
 
 const paymentLabels: Record<PaymentMethod, string> = {
@@ -48,17 +75,24 @@ const paymentLabels: Record<PaymentMethod, string> = {
   cartao_entrega: 'Cartão na Entrega',
 };
 
+// ─── Component ────────────────────────────────────────────
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, clearCart, itemCount } = useCart();
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   // Step 1
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [cpf, setCpf] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Step 1 errors
+  const [nameError, setNameError] = useState('');
+  const [cpfError, setCpfError] = useState('');
 
   // Step 2
   const [cep, setCep] = useState('');
@@ -67,6 +101,7 @@ export default function CheckoutPage() {
   const [complement, setComplement] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [deliveryFee, setDeliveryFee] = useState(5);
 
   // Step 3
@@ -74,14 +109,12 @@ export default function CheckoutPage() {
   const [needsChange, setNeedsChange] = useState(false);
   const [changeFor, setChangeFor] = useState('');
 
-  const { address: viaCepAddress, loading: cepLoading } = useViaCep(cep);
+  const { address: viaCepAddress, loading: cepLoading, error: cepError } = useViaCep(cep);
 
-  // Redirect if cart empty
   useEffect(() => {
     if (itemCount === 0) navigate('/carrinho');
   }, [itemCount, navigate]);
 
-  // Load delivery fee
   useEffect(() => {
     supabase.from('admin_settings').select('delivery_fee').limit(1).single()
       .then(({ data }) => {
@@ -94,56 +127,196 @@ export default function CheckoutPage() {
     if (viaCepAddress) {
       setStreet(viaCepAddress.street);
       setNeighborhood(viaCepAddress.neighborhood);
-      setCity(`${viaCepAddress.city} - ${viaCepAddress.state}`);
+      setCity(viaCepAddress.city);
+      setState(viaCepAddress.state);
     }
   }, [viaCepAddress]);
 
-  const total = subtotal + deliveryFee;
+  // Validate CPF in real time when fully typed
+  useEffect(() => {
+    const digits = cpf.replace(/\D/g, '');
+    if (digits.length === 0) { setCpfError(''); return; }
+    if (digits.length < 11) { setCpfError(''); return; }
+    setCpfError(isValidCpf(cpf) ? '' : 'CPF inválido');
+  }, [cpf]);
 
+  // Validate name in real time
+  useEffect(() => {
+    if (!name) { setNameError(''); return; }
+    setNameError(hasFullName(name) ? '' : 'Informe nome e sobrenome');
+  }, [name]);
+
+  const total = subtotal + deliveryFee;
+  const isOnlinePayment = paymentMethod === 'pix' || paymentMethod === 'cartao_online';
+
+  // ─── GPS ──────────────────────────────────────────────
+  const getAddressFromGps = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocalização não suportada pelo navegador.');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+            { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'BrunaPerfumaria/1.0' } }
+          );
+          const data = await res.json();
+          if (data?.address) {
+            const a = data.address;
+            setStreet(a.road || a.pedestrian || a.path || '');
+            setNeighborhood(a.suburb || a.neighbourhood || a.district || a.quarter || '');
+            setCity(a.city || a.town || a.municipality || a.village || '');
+            setState(a.state_code || a.ISO3166_2_lvl4?.replace('BR-', '') || '');
+            if (a.postcode) setCep(maskCep(a.postcode.replace(/\D/g, '')));
+            toast.success('Endereço preenchido via GPS!');
+          } else {
+            toast.error('Não foi possível identificar o endereço.');
+          }
+        } catch {
+          toast.error('Erro ao buscar endereço pelo GPS.');
+        } finally {
+          setGpsLoading(false);
+        }
+      },
+      (err) => {
+        setGpsLoading(false);
+        if (err.code === 1) toast.error('Permissão de localização negada.');
+        else toast.error('Não foi possível obter sua localização.');
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  // ─── Advance validation ───────────────────────────────
   const canAdvance = () => {
-    if (step === 1) return name.trim().length >= 3 && phone.replace(/\D/g, '').length >= 10;
-    if (step === 2) return cep.replace(/\D/g, '').length === 8 && street.trim() && number.trim() && neighborhood.trim() && city.trim();
+    if (step === 1) {
+      return (
+        hasFullName(name) &&
+        phone.replace(/\D/g, '').length >= 10 &&
+        !cpfError
+      );
+    }
+    if (step === 2) {
+      return (
+        cep.replace(/\D/g, '').length === 8 &&
+        street.trim() !== '' &&
+        number.trim() !== '' &&
+        neighborhood.trim() !== '' &&
+        city.trim() !== ''
+      );
+    }
     return true;
   };
 
+  // ─── Submit ───────────────────────────────────────────
   const handleSubmit = async () => {
+    // Final CPF check for online payments
+    if (isOnlinePayment) {
+      const digits = cpf.replace(/\D/g, '');
+      if (!digits) {
+        toast.error('CPF é obrigatório para pagamentos via PIX ou Cartão Online.');
+        return;
+      }
+      if (!isValidCpf(cpf)) {
+        toast.error('CPF inválido. Verifique e tente novamente.');
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
-      const paymentStatus = ['pix', 'cartao_online'].includes(paymentMethod) ? 'pending' : 'delivery_payment';
-      const { data, error } = await supabase.from('orders').insert({
-        customer_name: name.trim(),
-        customer_phone: phone.replace(/\D/g, ''),
-        customer_cpf: cpf.replace(/\D/g, '') || null,
-        notes: notes.trim() || null,
-        address: { cep: cep.replace(/\D/g, ''), street, number, complement, neighborhood, city },
-        items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image })),
-        subtotal,
-        delivery_fee: deliveryFee,
-        total,
-        payment_method: paymentMethod,
-        payment_status: paymentStatus as 'pending' | 'delivery_payment',
-        needs_change: needsChange,
-        change_for: needsChange ? parseFloat(changeFor) || null : null,
-      }).select('id, order_number').single();
+      const address = {
+        cep: cep.replace(/\D/g, ''),
+        street,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
+      };
+      const orderItems = items.map(i => ({
+        id: i.id,
+        title: i.title,
+        price: i.price,
+        quantity: i.quantity,
+        image: i.image,
+      }));
 
-      if (error) throw error;
-      clearCart();
-      navigate(`/pedido/${data.id}`);
+      if (isOnlinePayment) {
+        // Call Edge Function — creates Asaas charge + saves order
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: {
+            customer_name: name.trim(),
+            customer_phone: phone.replace(/\D/g, ''),
+            customer_cpf: cpf.replace(/\D/g, ''),
+            address,
+            items: orderItems,
+            payment_method: paymentMethod,
+            needs_change: false,
+            change_for: null,
+            notes: notes.trim() || null,
+            subtotal,
+            delivery_fee: deliveryFee,
+            total,
+          },
+        });
+
+        if (error || data?.error) {
+          throw new Error(data?.error || 'Erro ao processar pagamento. Tente novamente.');
+        }
+
+        clearCart();
+
+        // Card online: redirect straight to Asaas checkout
+        if (paymentMethod === 'cartao_online' && data.invoice_url) {
+          window.location.href = data.invoice_url;
+          return;
+        }
+
+        navigate(`/pedido/${data.order_id}`);
+      } else {
+        // Delivery: insert directly, no Asaas charge needed
+        const { data, error } = await supabase
+          .from('orders')
+          .insert({
+            customer_name: name.trim(),
+            customer_phone: phone.replace(/\D/g, ''),
+            customer_cpf: cpf.replace(/\D/g, '') || null,
+            notes: notes.trim() || null,
+            address,
+            items: orderItems,
+            subtotal,
+            delivery_fee: deliveryFee,
+            total,
+            payment_method: paymentMethod,
+            payment_status: 'delivery_payment',
+            needs_change: needsChange,
+            change_for: needsChange ? parseFloat(changeFor) || null : null,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        clearCart();
+        navigate(`/pedido/${data.id}`);
+      }
     } catch (err) {
-      console.error('Checkout error:', err);
-      alert('Erro ao finalizar pedido. Tente novamente.');
+      toast.error(err instanceof Error ? err.message : 'Erro ao finalizar pedido. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ─── Animation variants ───────────────────────────────
   const slideVariants = {
     enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
     center: { x: 0, opacity: 1 },
     exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
   };
-
-  const [direction, setDirection] = useState(1);
 
   const goNext = () => { setDirection(1); setStep(s => Math.min(s + 1, 3)); };
   const goBack = () => { setDirection(-1); setStep(s => Math.max(s - 1, 1)); };
@@ -200,88 +373,192 @@ export default function CheckoutPage() {
                 transition={{ duration: 0.25, ease: 'easeInOut' }}
               >
                 <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+
+                  {/* ── Step 1: Dados Pessoais ── */}
                   {step === 1 && (
                     <div className="space-y-5">
                       <h2 className="text-xl font-semibold text-foreground">Dados Pessoais</h2>
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="name">Nome completo *</Label>
-                          <Input id="name" className="mt-1.5 rounded-xl" placeholder="Seu nome completo"
-                            value={name} onChange={e => setName(e.target.value)} />
+                          <Input
+                            id="name"
+                            className={`mt-1.5 rounded-xl ${nameError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            placeholder="Seu nome completo"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                          />
+                          {nameError && <p className="text-xs text-destructive mt-1">{nameError}</p>}
                         </div>
                         <div>
                           <Label htmlFor="phone">Telefone *</Label>
-                          <Input id="phone" className="mt-1.5 rounded-xl" placeholder="(11) 99999-9999"
-                            value={phone} onChange={e => setPhone(maskPhone(e.target.value))} />
+                          <Input
+                            id="phone"
+                            className="mt-1.5 rounded-xl"
+                            placeholder="(11) 99999-9999"
+                            value={phone}
+                            onChange={e => setPhone(maskPhone(e.target.value))}
+                          />
                         </div>
                         <div>
-                          <Label htmlFor="cpf">CPF <span className="text-muted-foreground text-xs">(necessário para PIX)</span></Label>
-                          <Input id="cpf" className="mt-1.5 rounded-xl" placeholder="000.000.000-00"
-                            value={cpf} onChange={e => setCpf(maskCpf(e.target.value))} />
+                          <Label htmlFor="cpf">
+                            CPF{' '}
+                            <span className="text-muted-foreground text-xs">
+                              {isOnlinePayment ? '(obrigatório para PIX/Cartão)' : '(opcional)'}
+                            </span>
+                          </Label>
+                          <Input
+                            id="cpf"
+                            className={`mt-1.5 rounded-xl ${cpfError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            placeholder="000.000.000-00"
+                            value={cpf}
+                            onChange={e => setCpf(maskCpf(e.target.value))}
+                          />
+                          {cpfError && <p className="text-xs text-destructive mt-1">{cpfError}</p>}
+                          {!cpfError && cpf.replace(/\D/g, '').length === 11 && (
+                            <p className="text-xs text-green-600 mt-1">✓ CPF válido</p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="notes">Observações</Label>
-                          <Textarea id="notes" className="mt-1.5 rounded-xl" placeholder="Alguma observação sobre o pedido?"
-                            value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
+                          <Textarea
+                            id="notes"
+                            className="mt-1.5 rounded-xl"
+                            placeholder="Alguma observação sobre o pedido?"
+                            value={notes}
+                            onChange={e => setNotes(e.target.value)}
+                            rows={3}
+                          />
                         </div>
                       </div>
                     </div>
                   )}
 
+                  {/* ── Step 2: Endereço ── */}
                   {step === 2 && (
                     <div className="space-y-5">
-                      <h2 className="text-xl font-semibold text-foreground">Endereço de Entrega</h2>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold text-foreground">Endereço de Entrega</h2>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl gap-2 text-xs"
+                          onClick={getAddressFromGps}
+                          disabled={gpsLoading}
+                        >
+                          {gpsLoading
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <LocateFixed className="h-3.5 w-3.5" />
+                          }
+                          Usar minha localização
+                        </Button>
+                      </div>
                       <div className="space-y-4">
                         <div>
                           <Label htmlFor="cep">CEP *</Label>
                           <div className="relative">
-                            <Input id="cep" className="mt-1.5 rounded-xl" placeholder="00000-000"
-                              value={cep} onChange={e => setCep(maskCep(e.target.value))} />
-                            {cepLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 animate-spin text-muted-foreground" />}
+                            <Input
+                              id="cep"
+                              className="mt-1.5 rounded-xl pr-8"
+                              placeholder="00000-000"
+                              value={cep}
+                              onChange={e => setCep(maskCep(e.target.value))}
+                            />
+                            {cepLoading && (
+                              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
                           </div>
+                          {cepError && <p className="text-xs text-destructive mt-1">{cepError}</p>}
                         </div>
                         <div>
                           <Label htmlFor="street">Rua *</Label>
-                          <Input id="street" className="mt-1.5 rounded-xl" placeholder="Nome da rua"
-                            value={street} onChange={e => setStreet(e.target.value)} />
+                          <Input
+                            id="street"
+                            className="mt-1.5 rounded-xl"
+                            placeholder="Nome da rua"
+                            value={street}
+                            onChange={e => setStreet(e.target.value)}
+                          />
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           <div>
                             <Label htmlFor="number">Número *</Label>
-                            <Input id="number" className="mt-1.5 rounded-xl" placeholder="Nº"
-                              value={number} onChange={e => setNumber(e.target.value)} />
+                            <Input
+                              id="number"
+                              className="mt-1.5 rounded-xl"
+                              placeholder="Nº"
+                              value={number}
+                              onChange={e => setNumber(e.target.value)}
+                            />
                           </div>
                           <div className="col-span-2">
                             <Label htmlFor="complement">Complemento</Label>
-                            <Input id="complement" className="mt-1.5 rounded-xl" placeholder="Apto, bloco..."
-                              value={complement} onChange={e => setComplement(e.target.value)} />
+                            <Input
+                              id="complement"
+                              className="mt-1.5 rounded-xl"
+                              placeholder="Apto, bloco..."
+                              value={complement}
+                              onChange={e => setComplement(e.target.value)}
+                            />
                           </div>
                         </div>
                         <div>
                           <Label htmlFor="neighborhood">Bairro *</Label>
-                          <Input id="neighborhood" className="mt-1.5 rounded-xl" placeholder="Bairro"
-                            value={neighborhood} onChange={e => setNeighborhood(e.target.value)} />
+                          <Input
+                            id="neighborhood"
+                            className="mt-1.5 rounded-xl"
+                            placeholder="Bairro"
+                            value={neighborhood}
+                            onChange={e => setNeighborhood(e.target.value)}
+                          />
                         </div>
-                        <div>
-                          <Label htmlFor="city">Cidade *</Label>
-                          <Input id="city" className="mt-1.5 rounded-xl" placeholder="Cidade - UF"
-                            value={city} onChange={e => setCity(e.target.value)} />
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="col-span-2">
+                            <Label htmlFor="city">Cidade *</Label>
+                            <Input
+                              id="city"
+                              className="mt-1.5 rounded-xl"
+                              placeholder="Cidade"
+                              value={city}
+                              onChange={e => setCity(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="state">UF *</Label>
+                            <Input
+                              id="state"
+                              className="mt-1.5 rounded-xl"
+                              placeholder="SP"
+                              maxLength={2}
+                              value={state}
+                              onChange={e => setState(e.target.value.toUpperCase())}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
+                  {/* ── Step 3: Pagamento ── */}
                   {step === 3 && (
                     <div className="space-y-5">
                       <h2 className="text-xl font-semibold text-foreground">Forma de Pagamento</h2>
-                      <RadioGroup value={paymentMethod} onValueChange={(v) => {
-                        setPaymentMethod(v as PaymentMethod);
-                        setNeedsChange(false);
-                      }}>
+                      <RadioGroup
+                        value={paymentMethod}
+                        onValueChange={(v) => {
+                          setPaymentMethod(v as PaymentMethod);
+                          setNeedsChange(false);
+                        }}
+                      >
                         {(Object.entries(paymentLabels) as [PaymentMethod, string][]).map(([key, label]) => (
-                          <div key={key} className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
-                            paymentMethod === key ? 'border-primary bg-primary/5' : 'border-border'
-                          }`} onClick={() => { setPaymentMethod(key); setNeedsChange(false); }}>
+                          <div
+                            key={key}
+                            className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
+                              paymentMethod === key ? 'border-primary bg-primary/5' : 'border-border'
+                            }`}
+                            onClick={() => { setPaymentMethod(key); setNeedsChange(false); }}
+                          >
                             <RadioGroupItem value={key} id={key} />
                             <Label htmlFor={key} className="cursor-pointer font-medium flex-1">{label}</Label>
                           </div>
@@ -289,21 +566,48 @@ export default function CheckoutPage() {
                       </RadioGroup>
 
                       {paymentMethod === 'dinheiro_entrega' && (
-                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="space-y-3 overflow-hidden">
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          className="space-y-3 overflow-hidden"
+                        >
                           <div className="flex items-center gap-2">
-                            <input type="checkbox" id="needsChange" checked={needsChange}
+                            <input
+                              type="checkbox"
+                              id="needsChange"
+                              title="Precisa de troco?"
+                              checked={needsChange}
                               onChange={e => setNeedsChange(e.target.checked)}
-                              className="rounded border-border" />
+                              className="rounded border-border"
+                            />
                             <Label htmlFor="needsChange">Precisa de troco?</Label>
                           </div>
                           {needsChange && (
                             <div>
                               <Label htmlFor="changeFor">Troco para quanto?</Label>
-                              <Input id="changeFor" className="mt-1.5 rounded-xl" placeholder="R$ 100,00"
-                                type="number" value={changeFor} onChange={e => setChangeFor(e.target.value)} />
+                              <Input
+                                id="changeFor"
+                                className="mt-1.5 rounded-xl"
+                                placeholder="R$ 100,00"
+                                type="number"
+                                value={changeFor}
+                                onChange={e => setChangeFor(e.target.value)}
+                              />
                             </div>
                           )}
                         </motion.div>
+                      )}
+
+                      {/* CPF warning for online payments */}
+                      {isOnlinePayment && !cpf.replace(/\D/g, '') && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+                          ⚠️ Volte ao passo 1 e informe seu CPF para pagar via {paymentMethod === 'pix' ? 'PIX' : 'Cartão'}.
+                        </div>
+                      )}
+                      {isOnlinePayment && cpfError && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
+                          ⚠️ CPF inválido. Volte ao passo 1 e corrija.
+                        </div>
                       )}
                     </div>
                   )}
@@ -322,8 +626,15 @@ export default function CheckoutPage() {
                       Próximo <ArrowRight className="h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button onClick={handleSubmit} disabled={submitting || !canAdvance()} className="rounded-xl gap-2 min-w-[160px]">
-                      {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirmar Pedido'}
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={submitting || (isOnlinePayment && (!cpf.replace(/\D/g, '') || !!cpfError))}
+                      className="rounded-xl gap-2 min-w-[160px]"
+                    >
+                      {submitting
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : paymentMethod === 'cartao_online' ? 'Ir para Pagamento' : 'Confirmar Pedido'
+                      }
                     </Button>
                   )}
                 </div>
