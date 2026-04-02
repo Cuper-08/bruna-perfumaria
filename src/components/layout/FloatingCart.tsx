@@ -3,9 +3,24 @@ import { useCart } from '@/contexts/CartContext';
 import { Link } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { motion, useAnimation } from 'framer-motion';
+import { useEffect, useCallback } from 'react';
 
 const FloatingCart = () => {
   const { items, itemCount, subtotal, updateQuantity, removeItem } = useCart();
+  const controls = useAnimation();
+
+  const handleBounce = useCallback(() => {
+    controls.start({
+      scale: [1, 1.25, 0.95, 1.1, 1],
+      transition: { duration: 0.5, ease: 'easeInOut' },
+    });
+  }, [controls]);
+
+  useEffect(() => {
+    window.addEventListener('cart-item-added', handleBounce);
+    return () => window.removeEventListener('cart-item-added', handleBounce);
+  }, [handleBounce]);
 
   if (itemCount === 0) return null;
 
@@ -13,12 +28,21 @@ const FloatingCart = () => {
     <div className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6">
       <Sheet>
         <SheetTrigger asChild>
-          <button className="glass-primary rounded-full h-14 w-14 flex items-center justify-center text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-transform">
-            <ShoppingBag className="h-6 w-6" />
-            <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce-in">
+          <motion.button
+            animate={controls}
+            className="glass-primary rounded-full h-12 w-12 flex items-center justify-center text-primary-foreground shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            <motion.span
+              key={itemCount}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+              className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center"
+            >
               {itemCount}
-            </span>
-          </button>
+            </motion.span>
+          </motion.button>
         </SheetTrigger>
         <SheetContent className="w-full sm:max-w-md flex flex-col">
           <SheetHeader>

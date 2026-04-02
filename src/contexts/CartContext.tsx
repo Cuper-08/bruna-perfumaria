@@ -58,6 +58,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...item, quantity: 1 }];
     });
+    // Dispatch event for FloatingCart bounce
+    window.dispatchEvent(new CustomEvent('cart-item-added'));
   }, []);
 
   const removeItem = useCallback((id: string) => {

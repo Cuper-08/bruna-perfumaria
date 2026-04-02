@@ -40,7 +40,6 @@ const ProductPage = () => {
       price: Number(product.price),
       image: product.images?.[0] || '/placeholder.svg',
     });
-    toast.success(`${product.title} adicionado ao carrinho!`);
   };
 
   if (isLoading) {
