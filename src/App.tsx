@@ -11,6 +11,8 @@ import CartPage from "./pages/CartPage";
 import NotFound from "./pages/NotFound";
 import SearchPage from "./pages/SearchPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import TrendingPage from "./pages/TrendingPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminAuthLayout from "./components/admin/AdminAuthLayout";
