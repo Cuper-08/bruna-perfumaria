@@ -1,29 +1,57 @@
 
+# Criar Paginas "Categorias" e "Em Alta" com Visual Premium
 
-# Fix: Toast fantasma no ProductPage + Scroll to Top
+## Problema
+Os tabs "Categorias" e "Em Alta" na barra inferior apontam para `/categorias` e `/destaques`, mas essas rotas nao existem no App.tsx — resultam em 404.
 
-## Problemas
+## Solucao
 
-1. **Toast "adicionado ao carrinho"** aparece na ProductPage ao adicionar item. O texto nao existe no codigo atual — provavelmente e cache do navegador de uma versao anterior. Porem, o `handleAdd` da ProductPage tambem nao tem a animacao fly-to-cart que ja existe no ProductCard. Solucao: adicionar a mesma animacao FlyingDot + checkmark visual na ProductPage.
+### 1. Nova pagina `/categorias` — `src/pages/CategoriesPage.tsx`
+- Layout premium com cards grandes para cada categoria
+- Cada card mostra o icone da categoria, nome, e quantidade de produtos (via count query)
+- Cards com gradiente sutil, hover com scale, animacoes stagger com framer-motion
+- Link para `/categoria/{slug}` ao clicar
+- Visual: grid 2 colunas mobile, 3 desktop, cards com aspect-ratio, icone centralizado grande
 
-2. **Scroll para o footer** ao clicar "Finalizar Pedido" — nao existe um componente ScrollToTop global. Quando o usuario navega de qualquer rota para outra, o React Router nao faz scroll automatico.
-
-## Alteracoes
-
-### 1. `src/pages/ProductPage.tsx`
-- Adicionar a mesma logica de fly-to-cart do ProductCard: importar `createPortal`, `motion`, `useRef`
-- Criar componente `FlyingDot` (igual ao do ProductCard) ou extrair para arquivo compartilhado
-- No `handleAdd`: capturar posicao do botao, disparar animacao fly, mostrar checkmark temporario no botao
-- Adicionar estados `flying`, `flyPos`, `added` e `btnRef`
-- Substituir o botao estatico por um com AnimatePresence (check/bag icon swap)
-
-### 2. `src/components/ScrollToTop.tsx` (novo)
-- Componente que escuta `useLocation().pathname` e faz `window.scrollTo(0, 0)` em cada mudanca de rota
+### 2. Nova pagina `/destaques` — `src/pages/TrendingPage.tsx`
+- Logica dinamica: busca os produtos mais vendidos via `orders.items` (JSONB)
+- Query: agrupa product_id dos items de todos os pedidos, conta quantidade vendida, ordena desc
+- Fallback: se nao houver pedidos suficientes, complementa com produtos `featured = true`
+- Visual premium: badge "🔥 Top N" nos primeiros 3 produtos, grid de ProductCards
+- Titulo com icone Flame animado
 
 ### 3. `src/App.tsx`
-- Importar e renderizar `<ScrollToTop />` dentro do `<BrowserRouter>`, antes do `<Routes>`
+- Adicionar rotas: `/categorias` → CategoriesPage, `/destaques` → TrendingPage
 
-## Resultado
-- Ao adicionar produto na ProductPage, aparece a animacao fly-to-cart em vez de toast
-- Ao navegar para qualquer pagina (incluindo /carrinho e /checkout), o scroll vai para o topo automaticamente
+### Detalhes tecnicos
 
+**Query "Em Alta"**: Como `orders.items` e JSONB array, vou extrair os product IDs client-side dos pedidos recentes (ultimos 30 dias) e contar frequencia. Alternativa mais performante: criar uma RPC function no Postgres que faz o aggregate diretamente. Vou usar a abordagem RPC.
+
+**Nova RPC function** (migration):
+```sql
+CREATE OR REPLACE FUNCTION public.get_trending_products(days_back int DEFAULT 30, max_results int DEFAULT 20)
+RETURNS TABLE(product_id uuid, total_sold bigint)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT 
+    (item->>'id')::uuid as product_id,
+    SUM((item->>'quantity')::int) as total_sold
+  FROM orders, jsonb_array_elements(items) as item
+  WHERE created_at >= now() - (days_back || ' days')::interval
+    AND payment_status != 'cancelled'
+  GROUP BY (item->>'id')::uuid
+  ORDER BY total_sold DESC
+  LIMIT max_results;
+$$;
+```
+
+Depois busco os produtos por ID para montar os cards.
+
+## Arquivos
+
+| Arquivo | Acao |
+|---------|------|
+| Migration SQL | Nova RPC `get_trending_products` |
+| `src/pages/CategoriesPage.tsx` | Novo — grid premium de categorias |
+| `src/pages/TrendingPage.tsx` | Novo — produtos mais vendidos |
+| `src/App.tsx` | Adicionar 2 rotas |
