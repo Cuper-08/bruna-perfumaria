@@ -3,19 +3,47 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import StoreLayout from '@/components/layout/StoreLayout';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, ChevronRight } from 'lucide-react';
+import { ShoppingBag, ChevronRight, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
+
+const FlyingDot = ({ startX, startY, onDone }: { startX: number; startY: number; onDone: () => void }) => {
+  const endX = window.innerWidth - 28;
+  const endY = window.innerHeight - 100;
+
+  return createPortal(
+    <motion.div
+      initial={{ x: startX, y: startY, scale: 1, opacity: 1 }}
+      animate={{
+        x: [startX, (startX + endX) / 2, endX],
+        y: [startY, startY - 60, endY],
+        scale: [1, 0.8, 0.3],
+        opacity: [1, 1, 0],
+      }}
+      transition={{ duration: 0.6, ease: 'easeInOut' }}
+      onAnimationComplete={onDone}
+      className="fixed top-0 left-0 z-[9999] pointer-events-none"
+      style={{ width: 32, height: 32 }}
+    >
+      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+        <ShoppingBag className="h-4 w-4 text-primary-foreground" />
+      </div>
+    </motion.div>,
+    document.body
+  );
+};
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { addItem } = useCart();
   const [selectedImage, setSelectedImage] = useState(0);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [slug]);
+  const [flying, setFlying] = useState(false);
+  const [flyPos, setFlyPos] = useState({ x: 0, y: 0 });
+  const [added, setAdded] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
@@ -33,12 +61,22 @@ const ProductPage = () => {
 
   const handleAdd = () => {
     if (!product) return;
+
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (rect) {
+      setFlyPos({ x: rect.left + rect.width / 2 - 16, y: rect.top + rect.height / 2 - 16 });
+      setFlying(true);
+    }
+
     addItem({
       id: product.id,
       title: product.title,
       price: Number(product.price),
       image: product.images?.[0] || '/placeholder.svg',
     });
+
+    setAdded(true);
+    setTimeout(() => setAdded(false), 800);
   };
 
   if (isLoading) {
@@ -78,7 +116,6 @@ const ProductPage = () => {
   return (
     <StoreLayout>
       <div className="container mx-auto px-4 py-8 md:py-10">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-8 tracking-wide">
           <Link to="/" className="hover:text-foreground transition-colors">Início</Link>
           <ChevronRight className="h-3 w-3" />
@@ -94,7 +131,6 @@ const ProductPage = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-          {/* Gallery */}
           <div className="space-y-3">
             <div className="aspect-square bg-card rounded-2xl overflow-hidden shadow-sm border border-border/30">
               <img
@@ -120,7 +156,6 @@ const ProductPage = () => {
             )}
           </div>
 
-          {/* Details */}
           <div className="space-y-6 md:space-y-8">
             <div>
               {category && (
@@ -149,17 +184,35 @@ const ProductPage = () => {
               </div>
             )}
 
-            <Button
-              onClick={handleAdd}
-              size="lg"
-              className="w-full rounded-full font-semibold text-base gap-3 h-14 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
-              Adicionar ao Carrinho
-            </Button>
+            <motion.div whileTap={{ scale: 0.95 }}>
+              <Button
+                ref={btnRef}
+                onClick={handleAdd}
+                size="lg"
+                className="w-full rounded-full font-semibold text-base gap-3 h-14 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <AnimatePresence mode="wait">
+                  {added ? (
+                    <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
+                      <Check className="h-5 w-5" strokeWidth={2.5} />
+                      Adicionado!
+                    </motion.div>
+                  ) : (
+                    <motion.div key="bag" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="flex items-center gap-2">
+                      <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
+                      Adicionar ao Carrinho
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Button>
+            </motion.div>
           </div>
         </div>
       </div>
+
+      {flying && (
+        <FlyingDot startX={flyPos.x} startY={flyPos.y} onDone={() => setFlying(false)} />
+      )}
     </StoreLayout>
   );
 };
