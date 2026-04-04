@@ -11,6 +11,8 @@ import CartPage from "./pages/CartPage";
 import NotFound from "./pages/NotFound";
 import SearchPage from "./pages/SearchPage";
 import CheckoutPage from "./pages/CheckoutPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import TrendingPage from "./pages/TrendingPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminAuthLayout from "./components/admin/AdminAuthLayout";
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/produto/:slug" element={<ProductPage />} />
             <Route path="/carrinho" element={<CartPage />} />
             <Route path="/busca" element={<SearchPage />} />
+            <Route path="/categorias" element={<CategoriesPage />} />
+            <Route path="/destaques" element={<TrendingPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/pedido/:id" element={<OrderConfirmationPage />} />
 
