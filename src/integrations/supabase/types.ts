@@ -267,6 +267,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_trending_products: {
+        Args: { days_back?: number; max_results?: number }
+        Returns: {
+          product_id: string
+          total_sold: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
