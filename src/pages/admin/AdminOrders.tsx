@@ -228,7 +228,7 @@ const AdminOrders = () => {
                 return (
                   <Card 
                     key={order.id} 
-                    className="overflow-hidden rounded-2xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
+                    className={`overflow-hidden rounded-2xl border-border/50 border-l-4 ${statusBorderColors[order.order_status] || ''} shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 flex-wrap">
