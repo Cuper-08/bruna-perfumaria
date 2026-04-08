@@ -56,6 +56,14 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
 };
 
+const statusBorderColors: Record<string, string> = {
+  received: 'border-l-sky-500',
+  preparing: 'border-l-amber-500',
+  out_for_delivery: 'border-l-indigo-500',
+  delivered: 'border-l-emerald-500',
+  cancelled: 'border-l-rose-400',
+};
+
 const paymentLabels: Record<string, string> = {
   pix: 'PIX',
   cartao_online: 'Cartão Online',
@@ -157,43 +165,44 @@ const AdminOrders = () => {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">Gerencie os pedidos da sua loja em tempo real.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrintList} className="rounded-xl">
+          <Button variant="outline" size="sm" onClick={handlePrintList} className="rounded-xl border-border/50 hover:shadow-sm">
             <List className="h-4 w-4 mr-1" /> Imprimir
           </Button>
-          <Badge variant="outline" className="text-xs px-2.5 py-1">
-            <ShoppingBag className="h-3 w-3 mr-1" />
-            {orders.length}
-          </Badge>
         </div>
       </div>
 
-      {/* Status summary pills */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Status summary cards */}
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
         {statusTabs.filter(t => t.value !== 'all').map(tab => {
           const count = orders.filter(o => o.order_status === tab.value).length;
-          if (count === 0) return null;
           return (
             <button
               key={tab.value}
               onClick={() => setActiveTab(tab.value)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${statusColors[tab.value]} ${activeTab === tab.value ? 'ring-2 ring-offset-1 ring-primary/30' : 'hover:opacity-80'}`}
+              className={`flex flex-col items-center gap-1 p-3 rounded-2xl border transition-all duration-200 ${
+                activeTab === tab.value 
+                  ? 'border-primary/30 bg-primary/5 shadow-md scale-[1.02]' 
+                  : 'border-border/50 bg-card hover:shadow-sm hover:border-border'
+              }`}
             >
-              <tab.icon className="h-3 w-3" />
-              {tab.label}
-              <span className="font-bold">{count}</span>
+              <div className={`p-2 rounded-xl ${statusColors[tab.value]}`}>
+                <tab.icon className="h-4 w-4" />
+              </div>
+              <span className="text-2xl font-bold font-display">{count}</span>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{tab.label}</span>
             </button>
           );
         })}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto bg-muted/50 rounded-xl p-1">
+        <TabsList className="w-full flex overflow-x-auto bg-card border border-border/50 rounded-2xl p-1.5 shadow-sm">
           {statusTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-1 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-1.5 text-xs rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm data-[state=active]:font-semibold transition-all">
               <tab.icon className="h-3 w-3" />
               {tab.label}
               {tab.value !== 'all' && (
-                <span className="ml-1 text-[10px] bg-background/50 rounded-full px-1.5">
+                <span className="ml-0.5 text-[10px] bg-muted/60 rounded-full px-1.5 py-0.5 font-bold">
                   {orders.filter((o) => o.order_status === tab.value).length}
                 </span>
               )}
@@ -220,14 +229,14 @@ const AdminOrders = () => {
                 return (
                   <Card 
                     key={order.id} 
-                    className="overflow-hidden rounded-2xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
+                    className={`overflow-hidden rounded-2xl border-border/50 border-l-4 ${statusBorderColors[order.order_status] || ''} shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 flex-wrap">
+                    <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 flex-wrap bg-gradient-to-r from-muted/30 to-transparent">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold font-display">#{order.order_number}</span>
-                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${statusColors[order.order_status]}`}>
+                        <div className="flex items-center gap-2.5 mb-1">
+                          <span className="text-xl font-bold font-display tracking-tight">#{order.order_number}</span>
+                          <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${statusColors[order.order_status]}`}>
                             {statusLabels[order.order_status]}
                           </span>
                         </div>
