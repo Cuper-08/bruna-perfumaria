@@ -56,6 +56,14 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
 };
 
+const statusBorderColors: Record<string, string> = {
+  received: 'border-l-sky-500',
+  preparing: 'border-l-amber-500',
+  out_for_delivery: 'border-l-indigo-500',
+  delivered: 'border-l-emerald-500',
+  cancelled: 'border-l-rose-400',
+};
+
 const paymentLabels: Record<string, string> = {
   pix: 'PIX',
   cartao_online: 'Cartão Online',
