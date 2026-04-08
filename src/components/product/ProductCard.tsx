@@ -71,7 +71,7 @@ const ProductCard = ({ id, title, slug, price, image, featured }: ProductCardPro
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.25, ease: 'easeOut' }}>
       <Link
         to={`/produto/${slug}`}
-        className="group bg-transparent rounded-none overflow-hidden transition-all duration-500 relative block"
+        className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-400 relative border border-border/30 block"
       >
         {featured && (
           <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-[10px] font-semibold shadow-md tracking-wide">
@@ -80,29 +80,28 @@ const ProductCard = ({ id, title, slug, price, image, featured }: ProductCardPro
           </div>
         )}
 
-        <div className="aspect-[4/5] bg-secondary/20 overflow-hidden relative">
-          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity z-10 duration-500 pointer-events-none" />
+        <div className="aspect-[3/4] bg-muted overflow-hidden">
           <img
             src={image || '/placeholder.svg'}
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s] ease-out"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
             loading="lazy"
           />
         </div>
 
-        <div className="pt-4 pb-2">
-          <h3 className="text-sm font-light text-foreground uppercase tracking-widest line-clamp-2 md:truncate mb-2">
+        <div className="p-3.5">
+          <h3 className="text-sm font-medium text-foreground/85 line-clamp-2 mb-2.5 min-h-[2.5rem] leading-snug">
             {title}
           </h3>
-          <div className="flex items-center justify-between gap-2 mt-1">
-            <span className="text-sm font-medium text-foreground/80 tracking-widest">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-base font-bold text-primary tracking-tight">
               R$ {price.toFixed(2).replace('.', ',')}
             </span>
             <motion.div whileTap={{ scale: 0.85 }}>
               <Button
                 ref={btnRef}
                 size="icon"
-                className="h-8 w-8 rounded-full bg-transparent border border-foreground/20 text-foreground hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-white transition-all duration-500 shrink-0"
+                className="h-8 w-8 rounded-full bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 shrink-0"
                 variant="ghost"
                 onClick={handleAdd}
               >
