@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Loader2, Tag, Package } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Category = Tables<'categories'>;
@@ -75,79 +76,118 @@ const AdminCategories = () => {
     if (error) { toast.error('Erro'); fetchCategories(); }
   };
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Categorias</h2>
-        <Button onClick={openCreate} size="sm"><Plus className="h-4 w-4 mr-1" /> Nova Categoria</Button>
+        <div>
+          <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-foreground">Categorias</h2>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Organize seus produtos em categorias.</p>
+        </div>
+        <Button onClick={openCreate} className="bg-bruna-dark hover:bg-bruna-red text-white rounded-xl shadow-sm hover:shadow-md transition-all">
+          <Plus className="h-4 w-4 mr-1" /> Nova
+        </Button>
       </div>
 
-      <p className="text-sm text-muted-foreground">{categories.length} categoria(s)</p>
+      <Badge variant="outline" className="text-xs px-2.5 py-1">
+        <Tag className="h-3 w-3 mr-1" />
+        {categories.length} categoria(s)
+      </Badge>
 
-      <div className="space-y-2">
-        {categories.map(cat => (
-          <Card key={cat.id}>
-            <CardContent className="py-3 px-4 flex items-center gap-3">
-              <GripVertical className="h-4 w-4 text-muted-foreground/40" />
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{cat.name}</p>
-                <p className="text-xs text-muted-foreground">/{cat.slug} • Ícone: {cat.icon}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] text-muted-foreground">Ativa</span>
-                  <Switch checked={cat.active ?? true} onCheckedChange={() => toggleActive(cat.id, cat.active ?? true)} />
+      {categories.length === 0 ? (
+        <Card className="rounded-2xl border-border/50">
+          <CardContent className="py-16 text-center">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
+            <p className="text-muted-foreground font-medium">Nenhuma categoria criada.</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Crie sua primeira categoria para organizar os produtos.</p>
+            <Button onClick={openCreate} className="mt-4 bg-bruna-dark hover:bg-bruna-red text-white rounded-xl">
+              <Plus className="h-4 w-4 mr-1" /> Criar Categoria
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {categories.map((cat, index) => (
+            <Card 
+              key={cat.id} 
+              className="rounded-2xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <CardContent className="py-4 px-5 flex items-center gap-3">
+                <GripVertical className="h-4 w-4 text-muted-foreground/30 cursor-grab" />
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Tag className="h-5 w-5 text-primary" />
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(cat)}><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => setDeleteId(cat.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">{cat.name}</p>
+                  <p className="text-xs text-muted-foreground">/{cat.slug} • Ícone: {cat.icon}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[10px] text-muted-foreground">Ativa</span>
+                    <Switch checked={cat.active ?? true} onCheckedChange={() => toggleActive(cat.id, cat.active ?? true)} />
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(cat)} className="rounded-xl hover:bg-muted/60">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(cat.id)} className="rounded-xl hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
+            <DialogTitle className="font-display">{editing ? 'Editar Categoria' : 'Nova Categoria'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Nome</Label>
-              <Input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value, slug: generateSlug(e.target.value) })); }} />
+              <Input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value, slug: generateSlug(e.target.value) })); }} className="rounded-xl" />
             </div>
             <div>
               <Label>Slug</Label>
-              <Input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} />
+              <Input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} className="rounded-xl" />
             </div>
             <div>
               <Label>Ícone (nome Lucide)</Label>
-              <Input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="Package, Sparkles, etc." />
+              <Input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="Package, Sparkles, etc." className="rounded-xl" />
             </div>
             <div>
               <Label>Ordem</Label>
-              <Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} />
+              <Input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))} className="rounded-xl" />
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleSave}>{editing ? 'Atualizar' : 'Criar'}</Button>
+            <Button onClick={handleSave} className="bg-bruna-dark hover:bg-bruna-red text-white rounded-xl">{editing ? 'Atualizar' : 'Criar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirm */}
       <AlertDialog open={!!deleteId} onOpenChange={o => !o && setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
+            <AlertDialogTitle className="font-display">Excluir categoria?</AlertDialogTitle>
             <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">Excluir</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground rounded-xl">Excluir</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

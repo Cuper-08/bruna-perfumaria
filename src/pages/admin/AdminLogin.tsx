@@ -16,7 +16,6 @@ const AdminLogin = () => {
   const { signIn, isAdmin, loading: authLoading } = useAdminAuth();
   const navigate = useNavigate();
 
-  // Redirect via useEffect — never during render
   useEffect(() => {
     if (!authLoading && isAdmin) {
       navigate('/admin', { replace: true });
@@ -25,7 +24,7 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading) return; // prevent double submit
+    if (loading) return;
     setError('');
     setLoading(true);
 
@@ -43,26 +42,25 @@ const AdminLogin = () => {
     }
   };
 
-  // Show nothing while checking auth
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse-soft text-primary text-lg font-semibold">Carregando...</div>
+        <div className="animate-pulse text-primary text-lg font-semibold">Carregando...</div>
       </div>
     );
   }
 
-  // Already admin — useEffect will redirect
   if (isAdmin) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/30 p-4">
-      <Card className="w-full max-w-sm border-0 shadow-2xl">
-        <CardHeader className="text-center pb-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bruna-pink via-background to-bruna-cream p-4">
+      <Card className="w-full max-w-sm border-border/50 shadow-2xl rounded-2xl animate-fade-in overflow-hidden">
+        <div className="h-1 w-full bg-gradient-to-r from-bruna-red via-bruna-gold to-bruna-red" />
+        <CardHeader className="text-center pb-2 pt-8">
           <img src={brunaLogo} alt="Bruna Perfumaria" className="h-16 mx-auto mb-4 object-contain" />
-          <p className="text-sm text-muted-foreground">Painel Administrativo</p>
+          <p className="text-sm text-muted-foreground font-medium">Painel Administrativo</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
@@ -74,7 +72,7 @@ const AdminLogin = () => {
                   placeholder="admin@bruna.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 rounded-xl"
                   required
                 />
               </div>
@@ -89,15 +87,15 @@ const AdminLogin = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 rounded-xl"
                   required
                 />
               </div>
             </div>
             {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
+              <p className="text-sm text-destructive text-center bg-destructive/10 rounded-xl py-2 px-3">{error}</p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full bg-bruna-dark hover:bg-bruna-red text-white rounded-xl shadow-md hover:shadow-lg transition-all" disabled={loading}>
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>

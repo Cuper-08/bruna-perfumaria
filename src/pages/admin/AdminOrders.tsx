@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Phone, MapPin, Printer, ChefHat, Truck, CheckCircle, Clock, XCircle, AlertTriangle, MessageCircle, Pencil, List } from 'lucide-react';
+import { Phone, MapPin, Printer, ChefHat, Truck, CheckCircle, Clock, XCircle, AlertTriangle, MessageCircle, Pencil, List, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -49,11 +49,11 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  received: 'bg-blue-100 text-blue-700',
-  preparing: 'bg-amber-100 text-amber-700',
-  out_for_delivery: 'bg-purple-100 text-purple-700',
-  delivered: 'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-700',
+  received: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+  preparing: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+  out_for_delivery: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+  delivered: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  cancelled: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
 };
 
 const paymentLabels: Record<string, string> = {
@@ -64,10 +64,10 @@ const paymentLabels: Record<string, string> = {
 };
 
 const paymentStatusBadge = (status: string) => {
-  if (status === 'paid') return <Badge className="bg-green-500 text-white hover:bg-green-600">PAGO</Badge>;
-  if (status === 'delivery_payment') return <Badge className="bg-amber-500 text-white hover:bg-amber-600">PGTO NA ENTREGA</Badge>;
+  if (status === 'paid') return <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none">PAGO</Badge>;
+  if (status === 'delivery_payment') return <Badge className="bg-amber-500 text-white hover:bg-amber-600 border-none">PGTO NA ENTREGA</Badge>;
   if (status === 'failed') return <Badge variant="destructive">FALHOU</Badge>;
-  return <Badge className="bg-red-500 text-white hover:bg-red-600">PENDENTE</Badge>;
+  return <Badge className="bg-red-500 text-white hover:bg-red-600 border-none">PENDENTE</Badge>;
 };
 
 const nextStatus: Record<string, { label: string; next: string; icon: React.ElementType }> = {
@@ -147,27 +147,53 @@ const AdminOrders = () => {
   const filtered = activeTab === 'all' ? orders : orders.filter((o) => o.order_status === activeTab);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 animate-fade-in">
       <audio ref={audioRef} preload="auto" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipuzq49hO0FZcYyltaV2TDQ+WXOKnquggGhNQlRtgpOfoJuJdmZbX2t7ipWYlY+IgX15dn2DhoeHhYF8d3V1d3t/g4WFg4B8eXh4eXt9f4GCgoF/fXx7e3x9fn+AgIB/fn19fX1+fn9/f39/fn5+fn5+fn5/f39/f39/fn5+fn5+fn5/f39/f39/fn5+fn5+fn9/f39/f39+fn5+fn5+f39/f39/f35+fn5+fn5/f39/f39/fn5+fn5+fn9/f39/f39+fn5+fn5+f39/f39/f35+fn5+fn5/f39/f39+fn5+fn5+fn9/f39/f39+fn4=" />
 
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold font-sans">Pedidos</h2>
+        <div>
+          <h2 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-foreground">Pedidos</h2>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">Gerencie os pedidos da sua loja em tempo real.</p>
+        </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrintList}>
-            <List className="h-4 w-4 mr-1" /> Imprimir Lista
+          <Button variant="outline" size="sm" onClick={handlePrintList} className="rounded-xl">
+            <List className="h-4 w-4 mr-1" /> Imprimir
           </Button>
-          <span className="text-sm text-muted-foreground">{orders.length} pedidos</span>
+          <Badge variant="outline" className="text-xs px-2.5 py-1">
+            <ShoppingBag className="h-3 w-3 mr-1" />
+            {orders.length}
+          </Badge>
         </div>
       </div>
 
+      {/* Status summary pills */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {statusTabs.filter(t => t.value !== 'all').map(tab => {
+          const count = orders.filter(o => o.order_status === tab.value).length;
+          if (count === 0) return null;
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${statusColors[tab.value]} ${activeTab === tab.value ? 'ring-2 ring-offset-1 ring-primary/30' : 'hover:opacity-80'}`}
+            >
+              <tab.icon className="h-3 w-3" />
+              {tab.label}
+              <span className="font-bold">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full flex overflow-x-auto">
+        <TabsList className="w-full flex overflow-x-auto bg-muted/50 rounded-xl p-1">
           {statusTabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-1 text-xs">
+            <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-1 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <tab.icon className="h-3 w-3" />
               {tab.label}
               {tab.value !== 'all' && (
-                <span className="ml-1 text-[10px] bg-muted rounded-full px-1.5">
+                <span className="ml-1 text-[10px] bg-background/50 rounded-full px-1.5">
                   {orders.filter((o) => o.order_status === tab.value).length}
                 </span>
               )}
@@ -177,25 +203,31 @@ const AdminOrders = () => {
 
         <TabsContent value={activeTab} className="mt-4">
           {filtered.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Nenhum pedido nesta categoria.
+            <Card className="rounded-2xl border-border/50">
+              <CardContent className="py-16 text-center">
+                <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
+                <p className="text-muted-foreground font-medium">Nenhum pedido nesta categoria.</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Os pedidos aparecerão aqui em tempo real.</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
-              {filtered.map((order) => {
+              {filtered.map((order, index) => {
                 const items = (Array.isArray(order.items) ? order.items : []) as unknown as OrderItem[];
                 const addr = (order.address || {}) as unknown as OrderAddress;
                 const action = nextStatus[order.order_status];
 
                 return (
-                  <Card key={order.id} className="overflow-hidden">
+                  <Card 
+                    key={order.id} 
+                    className="overflow-hidden rounded-2xl border-border/50 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
                     <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 flex-wrap">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold">#{order.order_number}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[order.order_status]}`}>
+                          <span className="text-lg font-bold font-display">#{order.order_number}</span>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${statusColors[order.order_status]}`}>
                             {statusLabels[order.order_status]}
                           </span>
                         </div>
@@ -205,7 +237,7 @@ const AdminOrders = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         {paymentStatusBadge(order.payment_status)}
-                        <Badge variant="outline" className="text-xs">{paymentLabels[order.payment_method]}</Badge>
+                        <Badge variant="outline" className="text-xs rounded-lg">{paymentLabels[order.payment_method]}</Badge>
                       </div>
                     </CardHeader>
 
@@ -213,7 +245,7 @@ const AdminOrders = () => {
                       <div className="flex items-start gap-3 text-sm">
                         <div className="flex-1">
                           <p className="font-semibold">{order.customer_name}</p>
-                          <a href={`tel:${order.customer_phone}`} className="text-primary flex items-center gap-1 text-xs">
+                          <a href={`tel:${order.customer_phone}`} className="text-primary flex items-center gap-1 text-xs hover:underline">
                             <Phone className="h-3 w-3" /> {order.customer_phone}
                           </a>
                         </div>
@@ -233,28 +265,28 @@ const AdminOrders = () => {
                         )}
                       </div>
 
-                      <div className="border rounded-lg overflow-hidden">
+                      <div className="border border-border/50 rounded-xl overflow-hidden">
                         <table className="w-full text-sm">
-                          <thead className="bg-muted/50">
+                          <thead className="bg-muted/30">
                             <tr>
-                              <th className="text-left p-2 text-xs font-medium">Produto</th>
-                              <th className="text-center p-2 text-xs font-medium">Qtd</th>
-                              <th className="text-right p-2 text-xs font-medium">Valor</th>
+                              <th className="text-left p-2.5 text-xs font-medium text-muted-foreground">Produto</th>
+                              <th className="text-center p-2.5 text-xs font-medium text-muted-foreground">Qtd</th>
+                              <th className="text-right p-2.5 text-xs font-medium text-muted-foreground">Valor</th>
                             </tr>
                           </thead>
                           <tbody>
                             {items.map((item, i) => (
-                              <tr key={i} className="border-t">
-                                <td className="p-2 text-xs">{item.title}</td>
-                                <td className="p-2 text-xs text-center">{item.quantity}</td>
-                                <td className="p-2 text-xs text-right">R$ {(item.price * item.quantity).toFixed(2)}</td>
+                              <tr key={i} className="border-t border-border/30">
+                                <td className="p-2.5 text-xs">{item.title}</td>
+                                <td className="p-2.5 text-xs text-center">{item.quantity}</td>
+                                <td className="p-2.5 text-xs text-right font-medium">R$ {(item.price * item.quantity).toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
 
-                      <div className="text-sm space-y-1">
+                      <div className="text-sm space-y-1 bg-muted/20 rounded-xl p-3">
                         <div className="flex justify-between text-muted-foreground">
                           <span>Subtotal</span>
                           <span>R$ {Number(order.subtotal).toFixed(2)}</span>
@@ -263,20 +295,20 @@ const AdminOrders = () => {
                           <span>Entrega</span>
                           <span>R$ {Number(order.delivery_fee).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-bold text-base">
+                        <div className="flex justify-between font-bold text-base pt-1 border-t border-border/30">
                           <span>Total</span>
-                          <span>R$ {Number(order.total).toFixed(2)}</span>
+                          <span className="text-primary">R$ {Number(order.total).toFixed(2)}</span>
                         </div>
                       </div>
 
                       {order.payment_method === 'dinheiro_entrega' && order.needs_change && order.change_for && (
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-sm text-amber-800">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-sm text-amber-800 dark:text-amber-300">
                           💵 Troco para: <strong>R$ {Number(order.change_for).toFixed(2)}</strong>
                         </div>
                       )}
 
                       {order.notes && (
-                        <div className="bg-muted rounded-lg p-2 text-sm text-muted-foreground">
+                        <div className="bg-muted/40 rounded-xl p-3 text-sm text-muted-foreground">
                           📝 {order.notes}
                         </div>
                       )}
@@ -286,27 +318,27 @@ const AdminOrders = () => {
                         {action && (
                           <Button
                             onClick={() => updateStatus(order.id, action.next)}
-                            className="flex-1"
+                            className="flex-1 bg-bruna-dark hover:bg-bruna-red text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                             size="sm"
                           >
                             <action.icon className="h-4 w-4 mr-1" />
                             {action.label}
                           </Button>
                         )}
-                        <Button variant="outline" size="sm" onClick={() => openWhatsApp(order)} className="text-green-600 border-green-200 hover:bg-green-50">
+                        <Button variant="outline" size="sm" onClick={() => openWhatsApp(order)} className="text-green-600 border-green-200 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl">
                           <MessageCircle className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => openEdit(order)}>
+                        <Button variant="outline" size="sm" onClick={() => openEdit(order)} className="rounded-xl">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePrint(order)}>
+                        <Button variant="outline" size="sm" onClick={() => handlePrint(order)} className="rounded-xl">
                           <Printer className="h-4 w-4" />
                         </Button>
                         {order.order_status === 'received' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
                             onClick={() => updateStatus(order.id, 'cancelled')}
                           >
                             <XCircle className="h-4 w-4" />
