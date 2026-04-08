@@ -20,7 +20,7 @@ type Product = Tables<'products'>;
 type Category = Tables<'categories'>;
 
 const ProductSkeleton = () => (
-  <Card className="border-border/40 mb-3 shadow-sm">
+  <Card className="border-border/50 mb-3 shadow-sm bg-card rounded-xl">
     <CardContent className="py-3 px-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-pulse">
       <div className="h-16 w-16 rounded-xl bg-muted shrink-0"></div>
       <div className="flex-1 space-y-3 w-full">
@@ -126,11 +126,11 @@ const AdminProducts = () => {
     <div className="space-y-8 animate-fade-in pb-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-border/40">
         <div>
-          <h2 className="text-3xl font-display font-bold tracking-tight text-bruna-dark dark:text-bruna-cream">Produtos</h2>
-          <p className="text-muted-foreground mt-1">Gerencie seu catálogo, estoque e preços.</p>
+          <h2 className="text-4xl font-display font-bold tracking-tight text-bruna-dark dark:text-bruna-cream">Produtos</h2>
+          <p className="text-muted-foreground mt-2 text-lg">Gerencie seu catálogo, estoque e preços.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={() => setBulkOpen(true)} variant="outline" className="h-10 border-border/50 bg-background/50 backdrop-blur-sm hover:bg-muted shadow-sm hover:shadow transition-all">
+          <Button onClick={() => setBulkOpen(true)} variant="outline" className="h-10 border-border/50 bg-card hover:bg-muted shadow-sm hover:shadow transition-all">
             <FileSpreadsheet className="h-4 w-4 mr-2" /> 
             <span className="hidden sm:inline">Importar</span>
           </Button>
@@ -141,7 +141,7 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 p-4 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm shadow-sm">
+      <div className="flex flex-col md:flex-row gap-4 p-4 rounded-2xl bg-card border border-border/50 shadow-sm">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/70" />
           <Input 
@@ -194,7 +194,7 @@ const AdminProducts = () => {
           {filtered.map((product) => (
              <Card 
               key={product.id} 
-              className="group border-border/40 shadow-sm hover:shadow overflow-hidden transition-all duration-300 backdrop-blur-sm bg-background/95 hover:border-bruna-gold/30"
+              className="group border-border/50 shadow-sm hover:shadow-md overflow-hidden transition-all duration-300 bg-card rounded-xl hover:border-bruna-gold/50"
             >
               <CardContent className="py-0 px-0 flex flex-col sm:flex-row items-stretch min-h-[5rem]">
                 <div className="h-48 sm:h-auto sm:w-32 bg-muted flex items-center justify-center overflow-hidden shrink-0 relative">

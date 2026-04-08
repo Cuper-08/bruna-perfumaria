@@ -7,10 +7,12 @@ import { format, subDays, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import SplitPaymentWidget from '@/components/admin/SplitPaymentWidget';
 
 interface DashboardStats {
   ordersToday: number;
   revenueToday: number;
+  splitRevenueToday: number;
   pendingOrders: number;
   totalProducts: number;
 }
@@ -31,7 +33,7 @@ interface ChartData {
 }
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState<DashboardStats>({ ordersToday: 0, revenueToday: 0, pendingOrders: 0, totalProducts: 0 });
+  const [stats, setStats] = useState<DashboardStats>({ ordersToday: 0, revenueToday: 0, splitRevenueToday: 0, pendingOrders: 0, totalProducts: 0 });
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,9 +55,12 @@ const AdminDashboard = () => {
       ]);
 
       const orders = ordersRes.data || [];
+      const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+      
       setStats({
         ordersToday: orders.length,
-        revenueToday: orders.reduce((sum, o) => sum + Number(o.total), 0),
+        revenueToday: totalRevenue,
+        splitRevenueToday: totalRevenue * 0.02,
         pendingOrders: pendingRes.count || 0,
         totalProducts: productsRes.count || 0,
       });
@@ -89,14 +94,14 @@ const AdminDashboard = () => {
   }, []);
 
   const cards = [
-    { label: 'Receita Hoje', value: `R$ ${stats.revenueToday.toFixed(2)}`, icon: DollarSign, 
+    { label: 'Receita Bruta Hoje', value: `R$ ${stats.revenueToday.toFixed(2)}`, icon: DollarSign, 
       color: 'text-emerald-600', bgColor: 'bg-emerald-100/50 dark:bg-emerald-900/20', trend: '+12%' },
+    { label: 'Seu Lucro (Split 2%)', value: `R$ ${stats.splitRevenueToday.toFixed(2)}`, icon: ArrowUpRight, 
+      color: 'text-bruna-gold', bgColor: 'bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20', trend: '+12%' },
     { label: 'Pedidos Hoje', value: stats.ordersToday, icon: ShoppingBag, 
-      color: 'text-bruna-gold', bgColor: 'bg-[#D4AF37]/10 dark:bg-[#D4AF37]/20', trend: '+4%' },
+      color: 'text-indigo-500', bgColor: 'bg-indigo-100/50 dark:bg-indigo-900/20', trend: '+4%' },
     { label: 'Pendentes', value: stats.pendingOrders, icon: Clock, 
       color: 'text-amber-500', bgColor: 'bg-amber-100/50 dark:bg-amber-900/20' },
-    { label: 'Produtos Ativos', value: stats.totalProducts, icon: Package, 
-      color: 'text-indigo-500', bgColor: 'bg-indigo-100/50 dark:bg-indigo-900/20' },
   ];
 
   const statusConfig: Record<string, { label: string, color: string }> = {
@@ -110,13 +115,13 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-8 animate-fade-in pb-8">
       <div>
-        <h2 className="text-3xl font-display font-bold tracking-tight text-bruna-dark dark:text-bruna-cream">Dashboard</h2>
-        <p className="text-muted-foreground mt-1">Bem-vindo de volta! Aqui está o resumo das suas vendas.</p>
+        <h2 className="text-4xl font-display font-bold tracking-tight text-bruna-dark dark:text-bruna-cream">Dashboard</h2>
+        <p className="text-muted-foreground mt-2 text-lg">Bem-vindo de volta! Aqui está o resumo das suas vendas.</p>
       </div>
       
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {cards.map((c, i) => (
-          <Card key={c.label} className={`border-border/40 shadow-sm hover:shadow-md transition-all duration-300 backdrop-blur-sm bg-background/95 overflow-hidden relative group`} style={{ animationDelay: `${i * 100}ms` }}>
+          <Card key={c.label} className={`border-border/50 shadow-sm hover:shadow-lg transition-all duration-300 bg-card overflow-hidden relative group rounded-2xl`} style={{ animationDelay: `${i * 100}ms` }}>
             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <c.icon className="w-16 h-16 transform translate-x-4 -translate-y-4" />
             </div>
@@ -140,7 +145,7 @@ const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="col-span-1 lg:col-span-2 border-border/40 shadow-sm backdrop-blur-sm bg-background/95">
+        <Card className="col-span-1 lg:col-span-2 border-border/50 shadow-sm bg-card rounded-2xl">
           <CardHeader>
             <CardTitle className="text-lg font-display">Receita dos últimos 7 dias</CardTitle>
           </CardHeader>
@@ -179,7 +184,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="col-span-1 border-border/40 shadow-sm backdrop-blur-sm bg-background/95 flex flex-col">
+        <Card className="col-span-1 border-border/50 shadow-sm bg-card flex flex-col rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-display">Últimos Pedidos</CardTitle>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"><ArrowUpRight className="h-4 w-4" /></Button>
@@ -220,6 +225,14 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mt-6">
+        <SplitPaymentWidget 
+          totalRevenue={stats.revenueToday} 
+          splitPercentage={2} 
+          recentTransactionsCount={stats.ordersToday} 
+        />
       </div>
     </div>
   );
