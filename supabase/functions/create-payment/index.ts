@@ -95,7 +95,9 @@ Deno.serve(async (req) => {
       dueDate.setDate(dueDate.getDate() + 1)
       const dueDateStr = dueDate.toISOString().split('T')[0]
 
-      const billingType = payment_method === 'pix' ? 'PIX' : 'CREDIT_CARD'
+      // CREDIT_CARD requires additional Asaas account setup; UNDEFINED generates
+      // a universal payment link that supports PIX and card based on what is enabled.
+      const billingType = payment_method === 'pix' ? 'PIX' : 'UNDEFINED'
 
       const chargeRes = await asaasRequest('/payments', 'POST', {
         customer: customerId,
