@@ -231,11 +231,11 @@ const AdminOrders = () => {
                     className={`overflow-hidden rounded-2xl border-border/50 border-l-4 ${statusBorderColors[order.order_status] || ''} shadow-sm hover:shadow-lg transition-all duration-300 animate-fade-in`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 flex-wrap">
+                    <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2 flex-wrap bg-gradient-to-r from-muted/30 to-transparent">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-lg font-bold font-display">#{order.order_number}</span>
-                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${statusColors[order.order_status]}`}>
+                        <div className="flex items-center gap-2.5 mb-1">
+                          <span className="text-xl font-bold font-display tracking-tight">#{order.order_number}</span>
+                          <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${statusColors[order.order_status]}`}>
                             {statusLabels[order.order_status]}
                           </span>
                         </div>
