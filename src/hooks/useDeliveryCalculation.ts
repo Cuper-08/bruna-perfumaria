@@ -9,6 +9,11 @@ export interface DeliverySettings {
   delivery_max_radius_km: number;
 }
 
+export interface GpsCoords {
+  lat: number;
+  lon: number;
+}
+
 interface DeliveryResult {
   distanceKm: number | null;
   deliveryFee: number | null;
@@ -35,33 +40,68 @@ function calcFee(distKm: number, s: DeliverySettings): number {
   return s.delivery_fee_base + extra * s.delivery_fee_per_km;
 }
 
-/** Try to get lat/lng from Nominatim using the address returned by BrasilAPI */
-async function geocodeWithNominatim(
+/** Geocode using Nominatim. Tries multiple query strategies to handle São Paulo's
+ *  many duplicate street names across neighborhoods. */
+async function nominatimGeocode(
   street: string,
   neighborhood: string,
   city: string,
   state: string
-): Promise<{ lat: number; lon: number } | null> {
-  const parts = [street, neighborhood, city, state, 'Brasil'].filter(Boolean);
-  const q = encodeURIComponent(parts.join(', '));
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-      { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'BrunaPerfumaria/1.0' } }
-    );
-    const data = await res.json();
-    if (Array.isArray(data) && data.length > 0) {
-      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+): Promise<GpsCoords | null> {
+  const headers = {
+    'Accept-Language': 'pt-BR',
+    'User-Agent': 'BrunaPerfumaria/1.0',
+  };
+
+  const tryQuery = async (q: string): Promise<GpsCoords | null> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=br`,
+        { headers }
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      }
+    } catch {
+      // network error, try next strategy
     }
-  } catch {
-    // Nominatim unavailable — will fallback to base fee
+    return null;
+  };
+
+  // Strategy 1: street + neighborhood + city + state (most specific)
+  if (street && neighborhood) {
+    const result = await tryQuery(`${street}, ${neighborhood}, ${city}, ${state}, Brasil`);
+    if (result) return result;
   }
+
+  // Strategy 2: street + city + state (without neighborhood — different bairro may work)
+  if (street) {
+    const result = await tryQuery(`${street}, ${city}, ${state}, Brasil`);
+    if (result) return result;
+  }
+
+  // Strategy 3: neighborhood + city + state (neighborhood centroid as approximation)
+  if (neighborhood) {
+    const result = await tryQuery(`${neighborhood}, ${city}, ${state}, Brasil`);
+    if (result) return result;
+  }
+
   return null;
 }
 
+/**
+ * Calculates delivery fee based on distance from the store.
+ *
+ * @param cep - Customer's CEP (8 digits, masked or raw)
+ * @param settings - Delivery configuration from admin_settings
+ * @param gpsCoords - If provided (user clicked "Usar minha localização"), these
+ *   exact coordinates are used and CEP geocoding is skipped entirely.
+ */
 export function useDeliveryCalculation(
   cep: string,
-  settings: DeliverySettings | null
+  settings: DeliverySettings | null,
+  gpsCoords?: GpsCoords | null
 ): DeliveryResult {
   const [result, setResult] = useState<DeliveryResult>({
     distanceKm: null,
@@ -74,7 +114,30 @@ export function useDeliveryCalculation(
   useEffect(() => {
     const clean = cep.replace(/\D/g, '');
 
-    if (clean.length !== 8 || !settings) {
+    if (!settings) {
+      setResult({ distanceKm: null, deliveryFee: null, outOfRange: false, loading: false, error: null });
+      return;
+    }
+
+    // ── Fast path: GPS coordinates already known ───────────────────────────────
+    if (gpsCoords) {
+      const distKm = haversineKm(settings.store_lat, settings.store_lng, gpsCoords.lat, gpsCoords.lon);
+      if (distKm > settings.delivery_max_radius_km) {
+        setResult({ distanceKm: distKm, deliveryFee: null, outOfRange: true, loading: false, error: null });
+      } else {
+        setResult({
+          distanceKm: distKm,
+          deliveryFee: calcFee(distKm, settings),
+          outOfRange: false,
+          loading: false,
+          error: null,
+        });
+      }
+      return;
+    }
+
+    // ── CEP geocoding path ─────────────────────────────────────────────────────
+    if (clean.length !== 8) {
       setResult({ distanceKm: null, deliveryFee: null, outOfRange: false, loading: false, error: null });
       return;
     }
@@ -94,16 +157,16 @@ export function useDeliveryCalculation(
         let lat: number | null = null;
         let lon: number | null = null;
 
-        // 1st try: BrasilAPI coordinates
+        // 1st: BrasilAPI native coordinates
         const coords = data.location?.coordinates;
         if (coords?.latitude && coords?.longitude) {
           lat = parseFloat(coords.latitude);
           lon = parseFloat(coords.longitude);
         }
 
-        // 2nd try: Nominatim geocoding from BrasilAPI address fields
+        // 2nd: Nominatim fallback using address from BrasilAPI
         if (lat === null || lon === null) {
-          const nominatim = await geocodeWithNominatim(
+          const nominatim = await nominatimGeocode(
             data.street || '',
             data.neighborhood || '',
             data.city || 'São Paulo',
@@ -115,7 +178,7 @@ export function useDeliveryCalculation(
           }
         }
 
-        // No coordinates from either source — charge base fee, don't block checkout
+        // Last resort: charge base fee, don't block checkout
         if (lat === null || lon === null) {
           setResult({
             distanceKm: null,
@@ -141,7 +204,6 @@ export function useDeliveryCalculation(
           });
         }
       } catch {
-        // Network error — fallback to base fee so checkout isn't blocked
         setResult({
           distanceKm: null,
           deliveryFee: settings.delivery_fee_base,
@@ -153,7 +215,7 @@ export function useDeliveryCalculation(
     }, 700);
 
     return () => clearTimeout(timer);
-  }, [cep, settings]);
+  }, [cep, settings, gpsCoords]);
 
   return result;
 }
