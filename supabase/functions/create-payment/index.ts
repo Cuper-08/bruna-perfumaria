@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
       address,
       items,
       payment_method,
+      installments = 1,
       needs_change,
       change_for,
       notes,
@@ -95,18 +96,44 @@ Deno.serve(async (req) => {
       dueDate.setDate(dueDate.getDate() + 1)
       const dueDateStr = dueDate.toISOString().split('T')[0]
 
-      // CREDIT_CARD requires additional Asaas account setup; UNDEFINED generates
-      // a universal payment link that supports PIX and card based on what is enabled.
-      const billingType = payment_method === 'pix' ? 'PIX' : 'UNDEFINED'
+      let chargeBody: Record<string, unknown>
+      const numInstallments = Number(installments) || 1
 
-      const chargeRes = await asaasRequest('/payments', 'POST', {
-        customer: customerId,
-        billingType,
-        value: total,
-        dueDate: dueDateStr,
-        description: 'Pedido - Bruna Perfumaria',
-        notificationDisabled: true,
-      })
+      if (payment_method === 'pix') {
+        // PIX: always single charge
+        chargeBody = {
+          customer: customerId,
+          billingType: 'PIX',
+          value: total,
+          dueDate: dueDateStr,
+          description: 'Pedido - Bruna Perfumaria',
+          notificationDisabled: true,
+        }
+      } else if (numInstallments > 1) {
+        // Card with installments: CREDIT_CARD + installmentCount + installmentValue
+        const installmentValue = Math.round((total / numInstallments) * 100) / 100
+        chargeBody = {
+          customer: customerId,
+          billingType: 'CREDIT_CARD',
+          installmentCount: numInstallments,
+          installmentValue,
+          dueDate: dueDateStr,
+          description: 'Pedido - Bruna Perfumaria',
+          notificationDisabled: true,
+        }
+      } else {
+        // Card single payment: UNDEFINED generates universal payment link
+        chargeBody = {
+          customer: customerId,
+          billingType: 'UNDEFINED',
+          value: total,
+          dueDate: dueDateStr,
+          description: 'Pedido - Bruna Perfumaria',
+          notificationDisabled: true,
+        }
+      }
+
+      const chargeRes = await asaasRequest('/payments', 'POST', chargeBody)
 
       if (chargeRes.errors) {
         throw new Error(chargeRes.errors[0]?.description || 'Erro ao criar cobrança no Asaas')

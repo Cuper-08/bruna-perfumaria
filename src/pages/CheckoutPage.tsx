@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCart } from '@/contexts/CartContext';
 import { useViaCep } from '@/hooks/useViaCep';
+import { useDeliveryCalculation, DeliverySettings } from '@/hooks/useDeliveryCalculation';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -45,7 +46,7 @@ function maskCep(v: string) {
 function isValidCpf(cpf: string): boolean {
   const c = cpf.replace(/\D/g, '');
   if (c.length !== 11) return false;
-  if (/^(\d)\1+$/.test(c)) return false; // todos os dígitos iguais
+  if (/^(\d)\1+$/.test(c)) return false;
 
   let sum = 0;
   for (let i = 0; i < 9; i++) sum += parseInt(c[i]) * (10 - i);
@@ -101,24 +102,61 @@ export default function CheckoutPage() {
   const [complement, setComplement] = useState('');
   const [neighborhood, setNeighborhood] = useState('');
   const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [deliveryFee, setDeliveryFee] = useState(5);
+  const [uf, setUf] = useState('');
 
   // Step 3
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [needsChange, setNeedsChange] = useState(false);
   const [changeFor, setChangeFor] = useState('');
+  const [installments, setInstallments] = useState(1);
+
+  // Delivery settings (loaded from admin_settings)
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings | null>(null);
+  const [installmentMax, setInstallmentMax] = useState(6);
+  const [installmentMinValue, setInstallmentMinValue] = useState(50);
 
   const { address: viaCepAddress, loading: cepLoading, error: cepError } = useViaCep(cep);
+  const {
+    distanceKm,
+    deliveryFee: calcDeliveryFee,
+    outOfRange,
+    loading: deliveryLoading,
+    error: deliveryError,
+  } = useDeliveryCalculation(cep, deliverySettings);
+
+  // Effective fee (null = not yet calculated)
+  const deliveryFee = calcDeliveryFee;
+  const effectiveDeliveryFee = deliveryFee ?? 0;
+  const total = subtotal + effectiveDeliveryFee;
+
+  const isOnlinePayment = paymentMethod === 'pix' || paymentMethod === 'cartao_online';
+  const showInstallments =
+    paymentMethod === 'cartao_online' && total >= installmentMinValue && installmentMax > 1;
 
   useEffect(() => {
     if (itemCount === 0) navigate('/carrinho');
   }, [itemCount, navigate]);
 
   useEffect(() => {
-    supabase.from('admin_settings').select('delivery_fee').limit(1).single()
+    supabase
+      .from('admin_settings')
+      .select('*')
+      .limit(1)
+      .single()
       .then(({ data }) => {
-        if (data?.delivery_fee) setDeliveryFee(Number(data.delivery_fee));
+        if (data) {
+          const d = data as Record<string, unknown>;
+          setDeliverySettings({
+            store_lat: Number(d.store_lat) || -23.5033454,
+            store_lng: Number(d.store_lng) || -46.5035209,
+            delivery_fee_base: Number(d.delivery_fee_base) || 5,
+            delivery_fee_per_km: Number(d.delivery_fee_per_km) || 1.5,
+            delivery_base_radius_km: Number(d.delivery_base_radius_km) || 5,
+            delivery_max_radius_km: Number(d.delivery_max_radius_km) || 10,
+          });
+          setInstallmentMax(Number(d.installment_max) || 6);
+          setInstallmentMinValue(Number(d.installment_min_value) || 50);
+        }
       });
   }, []);
 
@@ -128,7 +166,7 @@ export default function CheckoutPage() {
       setStreet(viaCepAddress.street);
       setNeighborhood(viaCepAddress.neighborhood);
       setCity(viaCepAddress.city);
-      setState(viaCepAddress.state);
+      setUf(viaCepAddress.state);
     }
   }, [viaCepAddress]);
 
@@ -146,8 +184,10 @@ export default function CheckoutPage() {
     setNameError(hasFullName(name) ? '' : 'Informe nome e sobrenome');
   }, [name]);
 
-  const total = subtotal + deliveryFee;
-  const isOnlinePayment = paymentMethod === 'pix' || paymentMethod === 'cartao_online';
+  // Reset installments when payment method changes
+  useEffect(() => {
+    setInstallments(1);
+  }, [paymentMethod]);
 
   // ─── GPS ──────────────────────────────────────────────
   const getAddressFromGps = () => {
@@ -170,7 +210,7 @@ export default function CheckoutPage() {
             setStreet(a.road || a.pedestrian || a.path || '');
             setNeighborhood(a.suburb || a.neighbourhood || a.district || a.quarter || '');
             setCity(a.city || a.town || a.municipality || a.village || '');
-            setState(a.state_code || a.ISO3166_2_lvl4?.replace('BR-', '') || '');
+            setUf(a.state_code || a.ISO3166_2_lvl4?.replace('BR-', '') || '');
             if (a.postcode) setCep(maskCep(a.postcode.replace(/\D/g, '')));
             toast.success('Endereço preenchido via GPS!');
           } else {
@@ -206,7 +246,10 @@ export default function CheckoutPage() {
         street.trim() !== '' &&
         number.trim() !== '' &&
         neighborhood.trim() !== '' &&
-        city.trim() !== ''
+        city.trim() !== '' &&
+        !outOfRange &&
+        !deliveryLoading &&
+        deliveryFee !== null
       );
     }
     return true;
@@ -214,7 +257,6 @@ export default function CheckoutPage() {
 
   // ─── Submit ───────────────────────────────────────────
   const handleSubmit = async () => {
-    // Final CPF check for online payments
     if (isOnlinePayment) {
       const digits = cpf.replace(/\D/g, '');
       if (!digits) {
@@ -236,7 +278,7 @@ export default function CheckoutPage() {
         complement,
         neighborhood,
         city,
-        state,
+        state: uf,
       };
       const orderItems = items.map(i => ({
         id: i.id,
@@ -247,7 +289,6 @@ export default function CheckoutPage() {
       }));
 
       if (isOnlinePayment) {
-        // Call Edge Function — creates Asaas charge + saves order
         const { data, error } = await supabase.functions.invoke('create-payment', {
           body: {
             customer_name: name.trim(),
@@ -256,11 +297,12 @@ export default function CheckoutPage() {
             address,
             items: orderItems,
             payment_method: paymentMethod,
+            installments: paymentMethod === 'cartao_online' ? installments : 1,
             needs_change: false,
             change_for: null,
             notes: notes.trim() || null,
             subtotal,
-            delivery_fee: deliveryFee,
+            delivery_fee: effectiveDeliveryFee,
             total,
           },
         });
@@ -271,7 +313,6 @@ export default function CheckoutPage() {
 
         clearCart();
 
-        // Card online: redirect straight to Asaas checkout
         if (paymentMethod === 'cartao_online' && data.invoice_url) {
           window.location.href = data.invoice_url;
           return;
@@ -279,7 +320,6 @@ export default function CheckoutPage() {
 
         navigate(`/pedido/${data.order_id}`);
       } else {
-        // Delivery: insert directly, no Asaas charge needed
         const { data, error } = await supabase
           .from('orders')
           .insert({
@@ -290,7 +330,7 @@ export default function CheckoutPage() {
             address,
             items: orderItems,
             subtotal,
-            delivery_fee: deliveryFee,
+            delivery_fee: effectiveDeliveryFee,
             total,
             payment_method: paymentMethod,
             payment_status: 'delivery_payment',
@@ -320,6 +360,17 @@ export default function CheckoutPage() {
 
   const goNext = () => { setDirection(1); setStep(s => Math.min(s + 1, 3)); };
   const goBack = () => { setDirection(-1); setStep(s => Math.max(s - 1, 1)); };
+
+  // ─── Delivery display helpers ─────────────────────────
+  const deliveryDisplay = () => {
+    if (cep.replace(/\D/g, '').length < 8) return { text: 'A calcular', color: 'text-muted-foreground' };
+    if (deliveryLoading) return { text: 'Calculando...', color: 'text-muted-foreground' };
+    if (outOfRange) return { text: 'Fora do raio de entrega', color: 'text-destructive' };
+    if (deliveryFee !== null) return { text: `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`, color: 'text-foreground' };
+    return { text: 'A calcular', color: 'text-muted-foreground' };
+  };
+
+  const { text: deliveryText, color: deliveryColor } = deliveryDisplay();
 
   return (
     <div className="min-h-screen bg-background">
@@ -465,11 +516,30 @@ export default function CheckoutPage() {
                               value={cep}
                               onChange={e => setCep(maskCep(e.target.value))}
                             />
-                            {cepLoading && (
+                            {(cepLoading || deliveryLoading) && (
                               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 mt-0.5 h-4 w-4 animate-spin text-muted-foreground" />
                             )}
                           </div>
                           {cepError && <p className="text-xs text-destructive mt-1">{cepError}</p>}
+                          {/* Delivery distance info */}
+                          {cep.replace(/\D/g, '').length === 8 && !deliveryLoading && (
+                            <div className={`mt-2 text-xs rounded-lg px-3 py-2 ${
+                              outOfRange
+                                ? 'bg-red-50 border border-red-200 text-red-700'
+                                : deliveryError
+                                ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                                : 'bg-green-50 border border-green-200 text-green-700'
+                            }`}>
+                              {outOfRange
+                                ? `Fora do raio de entrega (${distanceKm?.toFixed(1)} km da loja). Raio máximo: ${deliverySettings?.delivery_max_radius_km ?? 10} km.`
+                                : deliveryError
+                                ? `Taxa de entrega: R$ ${deliveryFee?.toFixed(2).replace('.', ',') ?? '—'} (${deliveryError})`
+                                : distanceKm !== null
+                                ? `${distanceKm.toFixed(1)} km da loja — Taxa: R$ ${deliveryFee?.toFixed(2).replace('.', ',')}`
+                                : `Taxa de entrega: R$ ${deliveryFee?.toFixed(2).replace('.', ',')}`
+                              }
+                            </div>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="street">Rua *</Label>
@@ -525,14 +595,14 @@ export default function CheckoutPage() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="state">UF *</Label>
+                            <Label htmlFor="uf">UF *</Label>
                             <Input
-                              id="state"
+                              id="uf"
                               className="mt-1.5 rounded-xl"
                               placeholder="SP"
                               maxLength={2}
-                              value={state}
-                              onChange={e => setState(e.target.value.toUpperCase())}
+                              value={uf}
+                              onChange={e => setUf(e.target.value.toUpperCase())}
                             />
                           </div>
                         </div>
@@ -564,6 +634,41 @@ export default function CheckoutPage() {
                           </div>
                         ))}
                       </RadioGroup>
+
+                      {/* Installment selector */}
+                      {showInstallments && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          className="space-y-2 overflow-hidden"
+                        >
+                          <Label>Parcelamento</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {Array.from({ length: installmentMax }, (_, i) => i + 1).map(n => {
+                              const installmentValue = total / n;
+                              return (
+                                <button
+                                  key={n}
+                                  type="button"
+                                  onClick={() => setInstallments(n)}
+                                  className={`p-2.5 rounded-xl border text-sm transition-all ${
+                                    installments === n
+                                      ? 'border-primary bg-primary/5 text-primary font-semibold'
+                                      : 'border-border text-foreground hover:border-primary/50'
+                                  }`}
+                                >
+                                  <span className="block font-medium">{n}x</span>
+                                  <span className="block text-xs text-muted-foreground">
+                                    R$ {installmentValue.toFixed(2).replace('.', ',')}
+                                  </span>
+                                  {n === 1 && <span className="block text-xs text-green-600">à vista</span>}
+                                  {n > 1 && <span className="block text-xs text-green-600">sem juros</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
 
                       {paymentMethod === 'dinheiro_entrega' && (
                         <motion.div
@@ -667,11 +772,22 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Entrega</span>
-                  <span className="text-foreground">R$ {deliveryFee.toFixed(2).replace('.', ',')}</span>
+                  <span className={deliveryColor}>{deliveryText}</span>
                 </div>
+                {showInstallments && installments > 1 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Parcelamento</span>
+                    <span className="text-foreground">{installments}x sem juros</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-base font-bold pt-2 border-t border-border">
                   <span className="text-foreground">Total</span>
-                  <span className="text-primary">R$ {total.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-primary">
+                    {deliveryFee !== null
+                      ? `R$ ${total.toFixed(2).replace('.', ',')}`
+                      : `R$ ${subtotal.toFixed(2).replace('.', ',')} + entrega`
+                    }
+                  </span>
                 </div>
               </div>
             </div>

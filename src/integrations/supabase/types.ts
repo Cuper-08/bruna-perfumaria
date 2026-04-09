@@ -17,25 +17,49 @@ export type Database = {
       admin_settings: {
         Row: {
           business_hours: Json | null
+          delivery_base_radius_km: number | null
           delivery_fee: number | null
+          delivery_fee_base: number | null
+          delivery_fee_per_km: number | null
+          delivery_max_radius_km: number | null
           id: string
+          installment_max: number | null
+          installment_min_value: number | null
           store_address: string | null
+          store_lat: number | null
+          store_lng: number | null
           store_open: boolean | null
           store_phone: string | null
         }
         Insert: {
           business_hours?: Json | null
+          delivery_base_radius_km?: number | null
           delivery_fee?: number | null
+          delivery_fee_base?: number | null
+          delivery_fee_per_km?: number | null
+          delivery_max_radius_km?: number | null
           id?: string
+          installment_max?: number | null
+          installment_min_value?: number | null
           store_address?: string | null
+          store_lat?: number | null
+          store_lng?: number | null
           store_open?: boolean | null
           store_phone?: string | null
         }
         Update: {
           business_hours?: Json | null
+          delivery_base_radius_km?: number | null
           delivery_fee?: number | null
+          delivery_fee_base?: number | null
+          delivery_fee_per_km?: number | null
+          delivery_max_radius_km?: number | null
           id?: string
+          installment_max?: number | null
+          installment_min_value?: number | null
           store_address?: string | null
+          store_lat?: number | null
+          store_lng?: number | null
           store_open?: boolean | null
           store_phone?: string | null
         }
