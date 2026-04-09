@@ -35,6 +35,30 @@ function calcFee(distKm: number, s: DeliverySettings): number {
   return s.delivery_fee_base + extra * s.delivery_fee_per_km;
 }
 
+/** Try to get lat/lng from Nominatim using the address returned by BrasilAPI */
+async function geocodeWithNominatim(
+  street: string,
+  neighborhood: string,
+  city: string,
+  state: string
+): Promise<{ lat: number; lon: number } | null> {
+  const parts = [street, neighborhood, city, state, 'Brasil'].filter(Boolean);
+  const q = encodeURIComponent(parts.join(', '));
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'BrunaPerfumaria/1.0' } }
+    );
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+    }
+  } catch {
+    // Nominatim unavailable — will fallback to base fee
+  }
+  return null;
+}
+
 export function useDeliveryCalculation(
   cep: string,
   settings: DeliverySettings | null
@@ -67,10 +91,32 @@ export function useDeliveryCalculation(
           return;
         }
 
-        const coords = data.location?.coordinates;
+        let lat: number | null = null;
+        let lon: number | null = null;
 
-        // BrasilAPI doesn't have coordinates for every CEP — use base fee as fallback
-        if (!coords?.latitude || !coords?.longitude) {
+        // 1st try: BrasilAPI coordinates
+        const coords = data.location?.coordinates;
+        if (coords?.latitude && coords?.longitude) {
+          lat = parseFloat(coords.latitude);
+          lon = parseFloat(coords.longitude);
+        }
+
+        // 2nd try: Nominatim geocoding from BrasilAPI address fields
+        if (lat === null || lon === null) {
+          const nominatim = await geocodeWithNominatim(
+            data.street || '',
+            data.neighborhood || '',
+            data.city || 'São Paulo',
+            data.state || 'SP'
+          );
+          if (nominatim) {
+            lat = nominatim.lat;
+            lon = nominatim.lon;
+          }
+        }
+
+        // No coordinates from either source — charge base fee, don't block checkout
+        if (lat === null || lon === null) {
           setResult({
             distanceKm: null,
             deliveryFee: settings.delivery_fee_base,
@@ -81,12 +127,7 @@ export function useDeliveryCalculation(
           return;
         }
 
-        const distKm = haversineKm(
-          settings.store_lat,
-          settings.store_lng,
-          parseFloat(coords.latitude),
-          parseFloat(coords.longitude)
-        );
+        const distKm = haversineKm(settings.store_lat, settings.store_lng, lat, lon);
 
         if (distKm > settings.delivery_max_radius_km) {
           setResult({ distanceKm: distKm, deliveryFee: null, outOfRange: true, loading: false, error: null });
