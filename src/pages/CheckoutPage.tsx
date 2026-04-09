@@ -110,8 +110,15 @@ export default function CheckoutPage() {
   const [changeFor, setChangeFor] = useState('');
   const [installments, setInstallments] = useState(1);
 
-  // Delivery settings (loaded from admin_settings)
-  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings | null>(null);
+  // Delivery settings — start with correct defaults so checkout never blocks if DB is slow
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>({
+    store_lat: -23.5035602,
+    store_lng: -46.5044407,
+    delivery_fee_base: 5,
+    delivery_fee_per_km: 1,
+    delivery_base_radius_km: 5,
+    delivery_max_radius_km: 10,
+  });
   const [installmentMax, setInstallmentMax] = useState(6);
   const [installmentMinValue, setInstallmentMinValue] = useState(50);
 
@@ -124,9 +131,9 @@ export default function CheckoutPage() {
     error: deliveryError,
   } = useDeliveryCalculation(cep, deliverySettings);
 
-  // Effective fee (null = not yet calculated)
+  // Effective fee — fallback to base fee if coordinates unavailable
   const deliveryFee = calcDeliveryFee;
-  const effectiveDeliveryFee = deliveryFee ?? 0;
+  const effectiveDeliveryFee = deliveryFee ?? deliverySettings.delivery_fee_base;
   const total = subtotal + effectiveDeliveryFee;
 
   const isOnlinePayment = paymentMethod === 'pix' || paymentMethod === 'cartao_online';
@@ -147,10 +154,10 @@ export default function CheckoutPage() {
         if (data) {
           const d = data as Record<string, unknown>;
           setDeliverySettings({
-            store_lat: Number(d.store_lat) || -23.5033454,
-            store_lng: Number(d.store_lng) || -46.5035209,
+            store_lat: Number(d.store_lat) || -23.5035602,
+            store_lng: Number(d.store_lng) || -46.5044407,
             delivery_fee_base: Number(d.delivery_fee_base) || 5,
-            delivery_fee_per_km: Number(d.delivery_fee_per_km) || 1.5,
+            delivery_fee_per_km: Number(d.delivery_fee_per_km) || 1,
             delivery_base_radius_km: Number(d.delivery_base_radius_km) || 5,
             delivery_max_radius_km: Number(d.delivery_max_radius_km) || 10,
           });
@@ -248,8 +255,7 @@ export default function CheckoutPage() {
         neighborhood.trim() !== '' &&
         city.trim() !== '' &&
         !outOfRange &&
-        !deliveryLoading &&
-        deliveryFee !== null
+        !deliveryLoading
       );
     }
     return true;
