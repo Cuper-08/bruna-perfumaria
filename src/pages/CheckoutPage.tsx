@@ -312,12 +312,6 @@ export default function CheckoutPage() {
         }
 
         clearCart();
-
-        if (paymentMethod === 'cartao_online' && data.invoice_url) {
-          window.location.href = data.invoice_url;
-          return;
-        }
-
         navigate(`/pedido/${data.order_id}`);
       } else {
         const { data, error } = await supabase

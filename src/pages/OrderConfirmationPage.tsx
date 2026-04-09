@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, Package, ArrowLeft, Copy, Clock } from 'lucide-react';
+import { CheckCircle2, Package, ArrowLeft, Copy, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
@@ -22,9 +22,10 @@ export default function OrderConfirmationPage() {
       });
   }, [id]);
 
-  // Poll for PIX payment updates
+  // Poll for payment updates (PIX and card online)
   useEffect(() => {
-    if (!order || order.payment_method !== 'pix' || order.payment_status !== 'pending') return;
+    if (!order || order.payment_status !== 'pending') return;
+    if (order.payment_method !== 'pix' && order.payment_method !== 'cartao_online') return;
     const interval = setInterval(async () => {
       const { data } = await supabase.from('orders').select('payment_status, pix_qr_code, pix_copy_paste').eq('id', order.id).single();
       if (data && (data.payment_status !== 'pending' || data.pix_qr_code)) {
@@ -80,6 +81,40 @@ export default function OrderConfirmationPage() {
           <h1 className="text-2xl font-bold text-foreground mb-1">Pedido Confirmado!</h1>
           <p className="text-muted-foreground">Pedido #{order.order_number}</p>
         </motion.div>
+
+        {/* Card online area */}
+        {order.payment_method === 'cartao_online' && order.payment_status === 'pending' && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="bg-card border border-border rounded-2xl p-6 mb-6 text-center"
+          >
+            <div className="flex items-center justify-center gap-2 mb-3 text-blue-600">
+              <Clock className="h-5 w-5" />
+              <span className="font-medium">Aguardando Pagamento com Cartão</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Clique no botão abaixo para acessar a página de pagamento segura do Asaas e concluir sua compra.
+            </p>
+            {order.invoice_url ? (
+              <a
+                href={order.invoice_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Pagar com Cartão
+              </a>
+            ) : (
+              <div className="py-4 space-y-2">
+                <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                <p className="text-sm text-muted-foreground">Gerando link de pagamento...</p>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* PIX area */}
         {order.payment_method === 'pix' && order.payment_status === 'pending' && (
