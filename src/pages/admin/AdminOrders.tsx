@@ -306,7 +306,28 @@ const AdminOrders = () => {
   return (
     <TooltipProvider>
       <div className="space-y-4 animate-fade-in">
-        <audio ref={audioRef} preload="auto" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipuzq49hO0FZcYyltaV2TDQ+WXOKnquggGhNQlRtgpOfoJuJdmZbX2t7ipWYlY+IgX15dn2DhoeHhYF8d3V1d3t/g4WFg4B8eXh4eXt9f4GCgoF/fXx7e3x9fn+AgIB/fn19fX1+fn9/f39/fn5+fn5+fn5/f39/f39/fn5+fn5+fn5/f39/f39/fn5+fn5+fn9/f39/f39+fn5+fn5+f39/f39/f35+fn5+fn5/f39/f39/fn5+fn5+fn9/f39/f39+fn5+fn5+f39/f39/f35+fn5+fn5/f39/f39+fn5+fn5+fn9/f39/f39+fn4=" />
+        {/* New Order Banner */}
+        {newOrderBanner && (
+          <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg transition-all duration-500 ${newOrderBanner.visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <div className="relative bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white rounded-2xl shadow-2xl shadow-emerald-500/30 p-4 flex items-center gap-3 overflow-hidden">
+              {/* Animated pulse background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-pulse" />
+              
+              <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm shrink-0">
+                <Bell className="h-6 w-6 animate-bounce" />
+              </div>
+              <div className="relative flex-1 min-w-0">
+                <p className="font-display font-bold text-base">🔔 Novo Pedido!</p>
+                <p className="text-sm text-white/90 truncate">
+                  #{newOrderBanner.order.order_number} • {newOrderBanner.order.customer_name} • R$ {Number(newOrderBanner.order.total).toFixed(2)}
+                </p>
+              </div>
+              <button onClick={dismissBanner} className="relative p-1.5 rounded-lg hover:bg-white/20 transition-colors shrink-0">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-center justify-between">
