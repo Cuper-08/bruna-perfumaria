@@ -127,14 +127,15 @@ export default function CheckoutPage() {
   const {
     distanceKm,
     deliveryFee: calcDeliveryFee,
+    usingFallback,
     outOfRange,
     loading: deliveryLoading,
     error: deliveryError,
   } = useDeliveryCalculation(cep, deliverySettings, gpsCoords);
 
-  // Effective fee — fallback to base fee if coordinates unavailable
+  // deliveryFee is always a number or null (null only when outOfRange or no CEP yet)
   const deliveryFee = calcDeliveryFee;
-  const effectiveDeliveryFee = deliveryFee ?? deliverySettings.delivery_fee_base;
+  const effectiveDeliveryFee = deliveryFee ?? 0;
   const total = subtotal + effectiveDeliveryFee;
 
   const isOnlinePayment = paymentMethod === 'pix' || paymentMethod === 'cartao_online';
@@ -252,15 +253,14 @@ export default function CheckoutPage() {
       );
     }
     if (step === 2) {
-      return (
+      const hasAddress =
         cep.replace(/\D/g, '').length === 8 &&
         street.trim() !== '' &&
         number.trim() !== '' &&
         neighborhood.trim() !== '' &&
-        city.trim() !== '' &&
-        !outOfRange &&
-        !deliveryLoading
-      );
+        city.trim() !== '';
+      const feeReady = !deliveryLoading && deliveryFee !== null;
+      return hasAddress && !outOfRange && feeReady;
     }
     return true;
   };
@@ -367,10 +367,14 @@ export default function CheckoutPage() {
 
   // ─── Delivery display helpers ─────────────────────────
   const deliveryDisplay = () => {
-    if (cep.replace(/\D/g, '').length < 8) return { text: 'A calcular', color: 'text-muted-foreground' };
+    if (!gpsCoords && cep.replace(/\D/g, '').length < 8) return { text: 'A calcular', color: 'text-muted-foreground' };
     if (deliveryLoading) return { text: 'Calculando...', color: 'text-muted-foreground' };
     if (outOfRange) return { text: 'Fora do raio de entrega', color: 'text-destructive' };
-    if (deliveryFee !== null) return { text: `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`, color: 'text-foreground' };
+    if (deliveryError) return { text: deliveryError, color: 'text-destructive' };
+    if (deliveryFee !== null) {
+      const label = usingFallback ? `R$ ${deliveryFee.toFixed(2).replace('.', ',')} (taxa base)` : `R$ ${deliveryFee.toFixed(2).replace('.', ',')}`;
+      return { text: label, color: usingFallback ? 'text-amber-700' : 'text-foreground' };
+    }
     return { text: 'A calcular', color: 'text-muted-foreground' };
   };
 
@@ -530,13 +534,21 @@ export default function CheckoutPage() {
                             <div className={`mt-2 text-xs rounded-lg px-3 py-2 ${
                               outOfRange
                                 ? 'bg-red-50 border border-red-200 text-red-700'
+                                : deliveryError
+                                ? 'bg-red-50 border border-red-200 text-red-700'
+                                : usingFallback
+                                ? 'bg-amber-50 border border-amber-200 text-amber-800'
                                 : 'bg-green-50 border border-green-200 text-green-700'
                             }`}>
                               {outOfRange
                                 ? `Fora do raio de entrega (${distanceKm?.toFixed(1)} km da loja). Raio máximo: ${deliverySettings.delivery_max_radius_km} km.`
+                                : deliveryError
+                                ? deliveryError
+                                : usingFallback
+                                ? `CEP não localizado com precisão — taxa base aplicada: R$ ${deliveryFee?.toFixed(2).replace('.', ',')}. Use "Usar minha localização" para cálculo exato.`
                                 : distanceKm !== null
-                                ? `${gpsCoords ? '📍 GPS — ' : ''}${distanceKm.toFixed(1)} km da loja — Taxa: R$ ${deliveryFee?.toFixed(2).replace('.', ',')}`
-                                : `Taxa de entrega: R$ ${deliveryFee?.toFixed(2).replace('.', ',')} (distância não disponível para este CEP)`
+                                ? `${gpsCoords ? '📍 GPS — ' : ''}${distanceKm.toFixed(1)} km da loja — Taxa: R$ ${deliveryFee!.toFixed(2).replace('.', ',')}`
+                                : `Calculando...`
                               }
                             </div>
                           )}
@@ -783,8 +795,12 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-base font-bold pt-2 border-t border-border">
                   <span className="text-foreground">Total</span>
                   <span className="text-primary">
-                    {deliveryFee !== null
+                    {outOfRange
+                      ? `R$ ${subtotal.toFixed(2).replace('.', ',')} + entrega`
+                      : deliveryFee !== null
                       ? `R$ ${total.toFixed(2).replace('.', ',')}`
+                      : deliveryLoading
+                      ? `R$ ${subtotal.toFixed(2).replace('.', ',')} + ...`
                       : `R$ ${subtotal.toFixed(2).replace('.', ',')} + entrega`
                     }
                   </span>

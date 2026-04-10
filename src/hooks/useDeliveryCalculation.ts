@@ -17,6 +17,8 @@ export interface GpsCoords {
 interface DeliveryResult {
   distanceKm: number | null;
   deliveryFee: number | null;
+  /** true when no geocoding was possible — fee is the base rate as a fallback */
+  usingFallback: boolean;
   outOfRange: boolean;
   loading: boolean;
   error: string | null;
@@ -40,67 +42,99 @@ function calcFee(distKm: number, s: DeliverySettings): number {
   return s.delivery_fee_base + extra * s.delivery_fee_per_km;
 }
 
-/** Geocode using LocationIQ. Uses structured search and fallback matching to ensure
- *  high success rates for Brazilian addresses and CEPs. */
+/**
+ * Rejects geocoding results that are too far from the store.
+ * Prevents wrong-city results (e.g. LocationIQ returning Guarulhos for a SP address).
+ * Max plausible customer distance = 3× max delivery radius.
+ */
+function isReasonableResult(lat: number, lon: number, s: DeliverySettings): boolean {
+  const dist = haversineKm(s.store_lat, s.store_lng, lat, lon);
+  return dist <= s.delivery_max_radius_km * 3;
+}
+
 async function locationiqGeocode(
   street: string,
   city: string,
   state: string,
-  cep: string
+  cep: string,
+  settings: DeliverySettings
 ): Promise<GpsCoords | null> {
   const apiKey = import.meta.env.VITE_LOCATIONIQ_API_KEY || 'pk.e71d875c8c098f20e60c6ac00ef07f8a';
-  if (!apiKey) return null;
 
   const tryQuery = async (params: Record<string, string>): Promise<GpsCoords | null> => {
     try {
-      const qParams = new URLSearchParams({
-        key: apiKey,
-        format: 'json',
-        limit: '1',
-        countrycodes: 'br',
-        ...params
-      });
+      const qParams = new URLSearchParams({ key: apiKey, format: 'json', limit: '1', countrycodes: 'br', ...params });
       const res = await fetch(`https://us1.locationiq.com/v1/search?${qParams.toString()}`);
       if (!res.ok) return null;
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        // Reject if result is suspiciously far from store (wrong city/state)
+        if (isReasonableResult(lat, lon, settings)) {
+          return { lat, lon };
+        }
       }
-    } catch {
-      // network or parse error
-    }
+    } catch { /* network error */ }
     return null;
   };
 
-  // Strategy 1: Postal code + Street (best chance for exact match in LocationIQ)
   if (cep && street) {
-    const result = await tryQuery({ postalcode: cep, street });
-    if (result) return result;
+    const r = await tryQuery({ postalcode: cep, street });
+    if (r) return r;
   }
-
-  // Strategy 2: Just Postal Code
   if (cep) {
-    const result = await tryQuery({ postalcode: cep });
-    if (result) return result;
+    const r = await tryQuery({ postalcode: cep });
+    if (r) return r;
   }
-
-  // Strategy 3: Just the street + city string fallback
   if (street && city) {
-    const result = await tryQuery({ q: `${street}, ${city}, ${state}, Brasil` });
-    if (result) return result;
+    const r = await tryQuery({ q: `${street}, ${city}, ${state}, Brasil` });
+    if (r) return r;
   }
-
   return null;
 }
 
-/**
- * Calculates delivery fee based on distance from the store.
- *
- * @param cep - Customer's CEP (8 digits, masked or raw)
- * @param settings - Delivery configuration from admin_settings
- * @param gpsCoords - If provided (user clicked "Usar minha localização"), these
- *   exact coordinates are used and CEP geocoding is skipped entirely.
- */
+async function nominatimGeocode(
+  street: string,
+  neighborhood: string,
+  city: string,
+  state: string,
+  settings: DeliverySettings
+): Promise<GpsCoords | null> {
+  const headers = { 'Accept-Language': 'pt-BR', 'User-Agent': 'BrunaPerfumaria/1.0' };
+
+  const tryQuery = async (q: string): Promise<GpsCoords | null> => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=br`,
+        { headers }
+      );
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        if (isReasonableResult(lat, lon, settings)) return { lat, lon };
+      }
+    } catch { /* network error */ }
+    return null;
+  };
+
+  if (street && neighborhood) {
+    const r = await tryQuery(`${street}, ${neighborhood}, ${city}, ${state}, Brasil`);
+    if (r) return r;
+  }
+  if (street) {
+    const r = await tryQuery(`${street}, ${city}, ${state}, Brasil`);
+    if (r) return r;
+  }
+  // Neighborhood centroid as last resort — approximate but better than nothing
+  if (neighborhood) {
+    const r = await tryQuery(`${neighborhood}, ${city}, ${state}, Brasil`);
+    if (r) return r;
+  }
+  return null;
+}
+
 export function useDeliveryCalculation(
   cep: string,
   settings: DeliverySettings | null,
@@ -109,6 +143,7 @@ export function useDeliveryCalculation(
   const [result, setResult] = useState<DeliveryResult>({
     distanceKm: null,
     deliveryFee: null,
+    usingFallback: false,
     outOfRange: false,
     loading: false,
     error: null,
@@ -118,19 +153,20 @@ export function useDeliveryCalculation(
     const clean = cep.replace(/\D/g, '');
 
     if (!settings) {
-      setResult({ distanceKm: null, deliveryFee: null, outOfRange: false, loading: false, error: null });
+      setResult({ distanceKm: null, deliveryFee: null, usingFallback: false, outOfRange: false, loading: false, error: null });
       return;
     }
 
-    // ── Fast path: GPS coordinates already known ───────────────────────────────
+    // ── GPS fast path: exact coords, skip geocoding entirely ──────────────────
     if (gpsCoords) {
       const distKm = haversineKm(settings.store_lat, settings.store_lng, gpsCoords.lat, gpsCoords.lon);
       if (distKm > settings.delivery_max_radius_km) {
-        setResult({ distanceKm: distKm, deliveryFee: null, outOfRange: true, loading: false, error: null });
+        setResult({ distanceKm: distKm, deliveryFee: null, usingFallback: false, outOfRange: true, loading: false, error: null });
       } else {
         setResult({
           distanceKm: distKm,
           deliveryFee: calcFee(distKm, settings),
+          usingFallback: false,
           outOfRange: false,
           loading: false,
           error: null,
@@ -139,13 +175,13 @@ export function useDeliveryCalculation(
       return;
     }
 
-    // ── CEP geocoding path ─────────────────────────────────────────────────────
+    // ── CEP geocoding path ────────────────────────────────────────────────────
     if (clean.length !== 8) {
-      setResult({ distanceKm: null, deliveryFee: null, outOfRange: false, loading: false, error: null });
+      setResult({ distanceKm: null, deliveryFee: null, usingFallback: false, outOfRange: false, loading: false, error: null });
       return;
     }
 
-    setResult(r => ({ ...r, loading: true, error: null }));
+    setResult(r => ({ ...r, loading: true, error: null, usingFallback: false }));
 
     const timer = setTimeout(async () => {
       try {
@@ -153,7 +189,7 @@ export function useDeliveryCalculation(
         const data = await res.json();
 
         if (data.message || data.type === 'service_error') {
-          setResult({ distanceKm: null, deliveryFee: null, outOfRange: false, loading: false, error: 'CEP não encontrado' });
+          setResult({ distanceKm: null, deliveryFee: null, usingFallback: false, outOfRange: false, loading: false, error: 'CEP não encontrado' });
           return;
         }
 
@@ -163,32 +199,39 @@ export function useDeliveryCalculation(
         // 1st: BrasilAPI native coordinates
         const coords = data.location?.coordinates;
         if (coords?.latitude && coords?.longitude) {
-          lat = parseFloat(coords.latitude);
-          lon = parseFloat(coords.longitude);
-        }
-
-        // 2nd: LocationIQ fallback using address from BrasilAPI
-        if (lat === null || lon === null) {
-          const lociq = await locationiqGeocode(
-            data.street || '',
-            data.city || 'São Paulo',
-            data.state || 'SP',
-            clean
-          );
-          if (lociq) {
-            lat = lociq.lat;
-            lon = lociq.lon;
+          const candidateLat = parseFloat(coords.latitude);
+          const candidateLon = parseFloat(coords.longitude);
+          if (isReasonableResult(candidateLat, candidateLon, settings)) {
+            lat = candidateLat;
+            lon = candidateLon;
           }
         }
 
-        // Last resort: fail and ask for location
+        // 2nd: LocationIQ (with bounds check)
+        if (lat === null) {
+          const lociq = await locationiqGeocode(
+            data.street || '', data.city || 'São Paulo', data.state || 'SP', clean, settings
+          );
+          if (lociq) { lat = lociq.lat; lon = lociq.lon; }
+        }
+
+        // 3rd: Nominatim (with bounds check)
+        if (lat === null) {
+          const nom = await nominatimGeocode(
+            data.street || '', data.neighborhood || '', data.city || 'São Paulo', data.state || 'SP', settings
+          );
+          if (nom) { lat = nom.lat; lon = nom.lon; }
+        }
+
+        // All geocoders failed → charge base fee, don't block checkout
         if (lat === null || lon === null) {
           setResult({
             distanceKm: null,
-            deliveryFee: null,
+            deliveryFee: settings.delivery_fee_base,
+            usingFallback: true,
             outOfRange: false,
             loading: false,
-            error: 'Endereço não localizado pelo CEP. Por favor, clique em "Usar minha localização".',
+            error: null,
           });
           return;
         }
@@ -196,11 +239,12 @@ export function useDeliveryCalculation(
         const distKm = haversineKm(settings.store_lat, settings.store_lng, lat, lon);
 
         if (distKm > settings.delivery_max_radius_km) {
-          setResult({ distanceKm: distKm, deliveryFee: null, outOfRange: true, loading: false, error: null });
+          setResult({ distanceKm: distKm, deliveryFee: null, usingFallback: false, outOfRange: true, loading: false, error: null });
         } else {
           setResult({
             distanceKm: distKm,
             deliveryFee: calcFee(distKm, settings),
+            usingFallback: false,
             outOfRange: false,
             loading: false,
             error: null,
@@ -209,10 +253,11 @@ export function useDeliveryCalculation(
       } catch {
         setResult({
           distanceKm: null,
-          deliveryFee: null,
+          deliveryFee: settings.delivery_fee_base,
+          usingFallback: true,
           outOfRange: false,
           loading: false,
-          error: 'Endereço não localizado pelo CEP. Por favor, clique em "Usar minha localização".',
+          error: null,
         });
       }
     }, 700);
