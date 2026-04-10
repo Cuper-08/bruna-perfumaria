@@ -29,9 +29,13 @@ Deno.serve(async (req) => {
     const EVOLUTION_API_TOKEN = Deno.env.get('EVOLUTION_API_TOKEN') || '3555A856E07A-4666-94D8-A8842D809ECE';
 
     // Formatar tipo de pagamento para o cliente humano entender
-    let formattedPayment = 'Cartão';
-    if (record.payment_method === 'pix') formattedPayment = 'Pix';
-    if (record.payment_method === 'cash') formattedPayment = 'Dinheiro';
+    const paymentLabels: Record<string, string> = {
+      pix:              '💠 Pix (Pagamento Online)',
+      cartao_online:    '💳 Cartão de Crédito/Débito (Online)',
+      dinheiro_entrega: '💵 Dinheiro na Entrega — tenha o troco separado!',
+      cartao_entrega:   '💳 Cartão na Entrega — nossa maquininha vai junto!',
+    };
+    const formattedPayment = paymentLabels[record.payment_method] || record.payment_method || 'Não informado';
 
     const message = `
 *Bruna Perfumaria - Resumo do Pedido #${record.order_number || ''}* 
