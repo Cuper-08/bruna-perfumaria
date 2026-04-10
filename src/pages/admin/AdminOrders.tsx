@@ -160,6 +160,35 @@ const MiniTimeline = ({ status }: { status: string }) => {
   );
 };
 
+// Premium notification sound using Web Audio API
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const notes = [
+      { freq: 830, start: 0, dur: 0.15 },
+      { freq: 1050, start: 0.15, dur: 0.15 },
+      { freq: 1320, start: 0.3, dur: 0.15 },
+      { freq: 1580, start: 0.5, dur: 0.3 },
+    ];
+    notes.forEach(({ freq, start, dur }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur);
+    });
+  } catch {}
+};
+
+interface NewOrderBanner {
+  order: Order;
+  visible: boolean;
+}
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState('all');
@@ -168,8 +197,9 @@ const AdminOrders = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [showListPrint, setShowListPrint] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [newOrderBanner, setNewOrderBanner] = useState<NewOrderBanner | null>(null);
   const { toast } = useToast();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchOrders = useCallback(async () => {
     const { data } = await supabase
@@ -179,22 +209,42 @@ const AdminOrders = () => {
     if (data) setOrders(data);
   }, []);
 
+  const showNewOrderBanner = useCallback((order: Order) => {
+    // Clear previous banner timeout
+    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+    
+    setNewOrderBanner({ order, visible: true });
+    playNotificationSound();
+    
+    // Auto-dismiss after 8 seconds
+    bannerTimeoutRef.current = setTimeout(() => {
+      setNewOrderBanner(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setNewOrderBanner(null), 500);
+    }, 8000);
+  }, []);
+
+  const dismissBanner = useCallback(() => {
+    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+    setNewOrderBanner(prev => prev ? { ...prev, visible: false } : null);
+    setTimeout(() => setNewOrderBanner(null), 500);
+  }, []);
+
   useEffect(() => {
     fetchOrders();
 
-    // Realtime subscription
     const channel = supabase
       .channel('admin-orders-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+        const newOrder = payload.new as Order;
         setOrders((prev) => {
-          const exists = prev.some(o => o.id === (payload.new as Order).id);
+          const exists = prev.some(o => o.id === newOrder.id);
           if (exists) return prev;
-          return [payload.new as Order, ...prev];
+          return [newOrder, ...prev];
         });
-        try { audioRef.current?.play(); } catch {}
+        showNewOrderBanner(newOrder);
         toast({
           title: '🔔 Novo Pedido!',
-          description: `Pedido #${(payload.new as Order).order_number} recebido`,
+          description: `Pedido #${newOrder.order_number} recebido`,
         });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
@@ -206,14 +256,14 @@ const AdminOrders = () => {
         }
       });
 
-    // Polling fallback every 30s
     const pollInterval = setInterval(fetchOrders, 30000);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(pollInterval);
+      if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
     };
-  }, [fetchOrders, toast]);
+  }, [fetchOrders, toast, showNewOrderBanner]);
 
   const updateStatus = async (orderId: string, newStatus: string) => {
     await supabase.from('orders').update({ order_status: newStatus as Order['order_status'], updated_at: new Date().toISOString() }).eq('id', orderId);
