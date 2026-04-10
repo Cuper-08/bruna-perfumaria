@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Phone, MapPin, Printer, Truck, CheckCircle, Clock, XCircle, AlertTriangle, MessageCircle, Pencil, ShoppingBag, Package, Sparkles, ChevronDown, PackageCheck } from 'lucide-react';
+import { Phone, MapPin, Printer, Truck, CheckCircle, Clock, XCircle, AlertTriangle, MessageCircle, Pencil, ShoppingBag, Package, Sparkles, ChevronDown, PackageCheck, Bell, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
