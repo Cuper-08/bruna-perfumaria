@@ -1,56 +1,59 @@
 
 
-# Redesign Premium da Pagina de Pedidos (AdminOrders)
+# Redesign Compacto + Realtime Fix + Icones Corretos para Pedidos
 
-## Problema
-A pagina de pedidos esta funcional mas com visual "comum" — cards sem profundidade, header sem destaque, summary cards pequenos, tabela de itens sem refinamento, e acoes sem hierarquia visual clara. Comparada ao Dashboard (que ja tem gradientes, chart, cards com hover effects), a pagina de pedidos precisa do mesmo nivel de polish.
+## Problemas Identificados
+
+1. **Realtime nao funciona**: O codigo ja tem `supabase.channel('admin-orders')` com listener de INSERT/UPDATE, mas o Realtime precisa estar habilitado na tabela `orders` no Supabase. Alem disso, falta um fallback de polling periodico caso o canal falhe.
+
+2. **Icone ChefHat errado**: Usado em "Aceitar Pedido" (linha 112) e na timeline "Preparando" (linha 87). Inapropriado para loja de beleza. Substituir por `Sparkles` ou `PackageCheck` (empacotando).
+
+3. **Layout muito espalhado**: Cada card ocupa espaco excessivo com timeline, tabela de itens expandida, totais, e info do cliente — tudo aberto simultaneamente. Para fluxo rapido de pedidos, precisa ser compacto.
 
 ## Alteracoes em `src/pages/admin/AdminOrders.tsx`
 
-### Header
-- Adicionar contador total de pedidos ao lado do titulo com badge dourado
-- Subtitulo com dot animado verde "ao vivo" indicando tempo real
-- Botao "Imprimir" com estilo mais refinado + badge com contagem de pedidos filtrados
+### Fix Realtime
+- Adicionar polling de fallback a cada 30s com `setInterval` (caso websocket falhe)
+- Melhorar o subscribe com callback de status para detectar erros de conexao
+- Adicionar `.eq('table', 'orders')` no filter para garantir escopo
 
-### Summary Cards (grid de status)
-- Aumentar para `gap-3` com `p-4`
-- Adicionar gradiente sutil no background de cada card (ex: `bg-gradient-to-br from-sky-50 to-white`)
-- Numero maior (`text-3xl`) com animacao de contagem
-- Borda inferior colorida no card ativo em vez de borda completa
-- Adicionar sutil "ring" glow no card ativo
+### Icones Corretos (beleza)
+- `ChefHat` → `Sparkles` em todos os lugares (timeline step "Preparando", botao "Aceitar", tabs)
+- Botao "Aceitar Pedido" → icone `PackageCheck` com label "Aceitar Pedido"
+- Timeline: Novo(`Package`) → Preparando(`Sparkles`) → Entrega(`Truck`) → Entregue(`CheckCircle`)
 
-### Tabs
-- Remover a TabsList duplicada (ja temos os summary cards como filtro) — manter apenas como navegacao secundaria mais compacta, ou transformar em pills horizontais minimalistas
+### Layout Compacto Premium
+- **Remover timeline expandida** dos cards — substituir por mini-dots inline (4 circulos pequenos no header do card, sem labels)
+- **Colapsar tabela de itens**: mostrar apenas resumo inline ("3 itens • R$ 89,90") com expand/collapse opcional via `Collapsible`
+- **Info do cliente**: uma unica linha compacta (nome + telefone + bairro) em vez de card separado
+- **Totais**: linha unica "Total: R$ X" em bold, sem subtotal/entrega visivel (apenas no expand)
+- **Acoes**: manter na mesma linha do total, mais compactas
+- **Resultado**: cada card ocupa ~120px de altura em vez de ~400px
 
-### Order Cards — Redesign completo
-- **Header do card**: Layout em 2 colunas claras — esquerda (numero + status + data), direita (pagamento badges)
-- **Timeline visual**: Adicionar uma mini progress bar horizontal mostrando em qual etapa o pedido esta (Recebido > Preparando > Entrega > Entregue) com dots coloridos
-- **Info do cliente**: Card interno com avatar placeholder (iniciais do nome em circulo colorido), nome, telefone, endereco — tudo em layout limpo
-- **Tabela de itens**: Zebra striping sutil, fonte mais legivel, coluna de valor com destaque
-- **Totais**: Card com fundo gradiente sutil (`bg-gradient-to-r from-muted/30 to-muted/10`), total com tamanho maior e cor dourada
-- **Acoes**: Botao principal com gradiente (em vez de cor solida), icones secundarios com tooltip, separador visual entre acao principal e secundarias
-
-### Detalhes visuais globais
-- Stagger animation nos cards (ja existe, manter)
-- Hover no card: sutil elevacao + borda dourada (`hover:border-bruna-gold/30`)
-- Empty state: ilustracao maior, texto mais descritivo, animacao sutil
-
-### Timeline Progress (novo componente inline)
-Para cada pedido, uma barra horizontal com 4 steps:
+### Estrutura do Card Compacto
 ```text
-[●]───[●]───[○]───[○]
-Novo  Prep  Entrega Entregue
+┌─[●●○○]──#9 NOVO──────────Test User──────Total R$ 43,71──[Aceitar]─[⋯]─┐
+│  10 abr 16:22   1 item • Dinheiro na Entrega   Tucuruvi              │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
-- Steps completados: dot preenchido + linha colorida
-- Step atual: dot com ring/pulse
-- Steps futuros: dot vazio + linha cinza
+- Header: mini-dots de progresso + numero + status badge + nome + total + acoes
+- Subline: data + resumo itens + metodo pagamento + bairro
+- Click no card ou botao "ver mais" expande detalhes (itens, endereco completo, totais discriminados)
+
+### Expand/Collapse
+- Usar `Collapsible` do shadcn para detalhes
+- Estado controlado por `expandedOrders: Set<string>`
+- Clicar no card toggle expanded
 
 ## Arquivos
 
 | Arquivo | Acao |
 |---------|------|
-| `src/pages/admin/AdminOrders.tsx` | Redesign premium completo |
+| `src/pages/admin/AdminOrders.tsx` | Redesign compacto + fix realtime + icones |
 
 ## Resultado
-Pagina de pedidos com visual no mesmo nivel do Dashboard — cards com profundidade, timeline de progresso, hierarquia visual clara, e interacoes refinadas.
+- Pedidos aparecem automaticamente sem reload (realtime + polling fallback)
+- Icones adequados para loja de beleza
+- Cards compactos que mostram info essencial em 2 linhas, expandindo sob demanda
+- Fluxo de gestao muito mais rapido e limpo
 
