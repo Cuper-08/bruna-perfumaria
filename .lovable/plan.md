@@ -1,59 +1,47 @@
 
 
-# Redesign Compacto + Realtime Fix + Icones Corretos para Pedidos
+# Assinatura HSB Marketing no Footer + PWA para Instalacao
 
-## Problemas Identificados
+## 1. Assinatura HSB Marketing no Footer
 
-1. **Realtime nao funciona**: O codigo ja tem `supabase.channel('admin-orders')` com listener de INSERT/UPDATE, mas o Realtime precisa estar habilitado na tabela `orders` no Supabase. Alem disso, falta um fallback de polling periodico caso o canal falhe.
+Adicionar no `src/components/layout/Footer.tsx`, logo abaixo do copyright existente, o bloco de assinatura identico ao do projeto Bras Conceito:
+- Link para `https://www.hsbmarketing.com.br/`
+- Logo SVG inline do HSB (circulo azul com letras H, S, B)
+- Texto "Desenvolvido por" + "HSB Marketing"
+- Hover com glow azul e transicao de opacidade
 
-2. **Icone ChefHat errado**: Usado em "Aceitar Pedido" (linha 112) e na timeline "Preparando" (linha 87). Inapropriado para loja de beleza. Substituir por `Sparkles` ou `PackageCheck` (empacotando).
+O bloco sera inserido transformando o `<p>` de copyright em um `<div>` flex-col com o copyright + o link da HSB abaixo.
 
-3. **Layout muito espalhado**: Cada card ocupa espaco excessivo com timeline, tabela de itens expandida, totais, e info do cliente — tudo aberto simultaneamente. Para fluxo rapido de pedidos, precisa ser compacto.
+## 2. PWA - App Instalavel (sem service worker)
 
-## Alteracoes em `src/pages/admin/AdminOrders.tsx`
+Como o usuario quer apenas instalacao em iOS e Android (sem necessidade de offline), usaremos a abordagem simples: **manifest.json + meta tags** — sem `vite-plugin-pwa` nem service workers (evita problemas no preview do Lovable).
 
-### Fix Realtime
-- Adicionar polling de fallback a cada 30s com `setInterval` (caso websocket falhe)
-- Melhorar o subscribe com callback de status para detectar erros de conexao
-- Adicionar `.eq('table', 'orders')` no filter para garantir escopo
-
-### Icones Corretos (beleza)
-- `ChefHat` → `Sparkles` em todos os lugares (timeline step "Preparando", botao "Aceitar", tabs)
-- Botao "Aceitar Pedido" → icone `PackageCheck` com label "Aceitar Pedido"
-- Timeline: Novo(`Package`) → Preparando(`Sparkles`) → Entrega(`Truck`) → Entregue(`CheckCircle`)
-
-### Layout Compacto Premium
-- **Remover timeline expandida** dos cards — substituir por mini-dots inline (4 circulos pequenos no header do card, sem labels)
-- **Colapsar tabela de itens**: mostrar apenas resumo inline ("3 itens • R$ 89,90") com expand/collapse opcional via `Collapsible`
-- **Info do cliente**: uma unica linha compacta (nome + telefone + bairro) em vez de card separado
-- **Totais**: linha unica "Total: R$ X" em bold, sem subtotal/entrega visivel (apenas no expand)
-- **Acoes**: manter na mesma linha do total, mais compactas
-- **Resultado**: cada card ocupa ~120px de altura em vez de ~400px
-
-### Estrutura do Card Compacto
-```text
-┌─[●●○○]──#9 NOVO──────────Test User──────Total R$ 43,71──[Aceitar]─[⋯]─┐
-│  10 abr 16:22   1 item • Dinheiro na Entrega   Tucuruvi              │
-└──────────────────────────────────────────────────────────────────────────┘
-```
-- Header: mini-dots de progresso + numero + status badge + nome + total + acoes
-- Subline: data + resumo itens + metodo pagamento + bairro
-- Click no card ou botao "ver mais" expande detalhes (itens, endereco completo, totais discriminados)
-
-### Expand/Collapse
-- Usar `Collapsible` do shadcn para detalhes
-- Estado controlado por `expandedOrders: Set<string>`
-- Clicar no card toggle expanded
-
-## Arquivos
+### Arquivos
 
 | Arquivo | Acao |
 |---------|------|
-| `src/pages/admin/AdminOrders.tsx` | Redesign compacto + fix realtime + icones |
+| `src/components/layout/Footer.tsx` | Adicionar assinatura HSB Marketing |
+| `public/manifest.json` | Criar manifest para PWA (name, icons, display: standalone, theme_color) |
+| `index.html` | Adicionar `<link rel="manifest">` + meta tags Apple (apple-mobile-web-app-capable, apple-mobile-web-app-status-bar-style, apple-touch-icon) |
+
+### Detalhes do manifest.json
+- `name`: "Bruna Perfumaria"
+- `short_name`: "Bruna"
+- `start_url`: "/"
+- `display`: "standalone"
+- `background_color`: "#1a1a2e" (bruna-dark)
+- `theme_color`: "#1a1a2e"
+- `icons`: Usaremos o logo existente ou criaremos icones placeholder em 192x192 e 512x512
+
+### Meta tags no index.html
+```html
+<link rel="manifest" href="/manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#1a1a2e" />
+```
 
 ## Resultado
-- Pedidos aparecem automaticamente sem reload (realtime + polling fallback)
-- Icones adequados para loja de beleza
-- Cards compactos que mostram info essencial em 2 linhas, expandindo sob demanda
-- Fluxo de gestao muito mais rapido e limpo
+- Footer com assinatura profissional HSB Marketing identica ao Bras Conceito
+- App instalavel no celular via "Adicionar a Tela Inicio" (iOS Safari / Android Chrome)
 
