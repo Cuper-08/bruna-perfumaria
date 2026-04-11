@@ -192,6 +192,7 @@ interface NewOrderBanner {
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState('all');
+  const [activePaymentFilter, setActivePaymentFilter] = useState('all');
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -248,7 +249,20 @@ const AdminOrders = () => {
         });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
-        setOrders((prev) => prev.map((o) => (o.id === (payload.new as Order).id ? (payload.new as Order) : o)));
+        const updatedOrder = payload.new as Order;
+        setOrders((prev) => prev.map((o) => {
+          if (o.id === updatedOrder.id) {
+            // Show toast if payment status changed to paid
+            if (o.payment_status !== 'paid' && updatedOrder.payment_status === 'paid') {
+              toast({
+                title: '✅ Pagamento Confirmado!',
+                description: `Pedido #${updatedOrder.order_number} foi pago`,
+              });
+            }
+            return updatedOrder;
+          }
+          return o;
+        }));
       })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') {
@@ -256,7 +270,7 @@ const AdminOrders = () => {
         }
       });
 
-    const pollInterval = setInterval(fetchOrders, 30000);
+    const pollInterval = setInterval(fetchOrders, 10000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -301,7 +315,13 @@ const AdminOrders = () => {
     });
   };
 
-  const filtered = activeTab === 'all' ? orders : orders.filter((o) => o.order_status === activeTab);
+  const filtered = orders.filter((o) => {
+    const statusMatch = activeTab === 'all' || o.order_status === activeTab;
+    if (activePaymentFilter === 'all') return statusMatch;
+    if (activePaymentFilter === 'online') return statusMatch && (o.payment_method === 'pix' || o.payment_method === 'cartao_online');
+    if (activePaymentFilter === 'entrega') return statusMatch && (o.payment_method === 'dinheiro_entrega' || o.payment_method === 'cartao_entrega');
+    return statusMatch;
+  });
 
   return (
     <TooltipProvider>
@@ -378,7 +398,7 @@ const AdminOrders = () => {
           })}
         </div>
 
-        {/* Quick filter pills */}
+        {/* Quick filter pills - Status */}
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
           {statusTabs.map(tab => {
             const count = tab.value === 'all' ? orders.length : orders.filter(o => o.order_status === tab.value).length;
@@ -400,6 +420,40 @@ const AdminOrders = () => {
               </button>
             );
           })}
+        </div>
+
+        {/* Quick filter pills - Payment Type */}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Forma:</span>
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {[
+              { value: 'all', label: 'Todas' },
+              { value: 'online', label: '💳 Online (PIX, Cartão)' },
+              { value: 'entrega', label: '🚚 Na Entrega' },
+            ].map(filter => {
+              const count = filter.value === 'all'
+                ? orders.length
+                : filter.value === 'online'
+                  ? orders.filter(o => o.payment_method === 'pix' || o.payment_method === 'cartao_online').length
+                  : orders.filter(o => o.payment_method === 'dinheiro_entrega' || o.payment_method === 'cartao_entrega').length;
+              return (
+                <button
+                  key={filter.value}
+                  onClick={() => setActivePaymentFilter(filter.value)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap ${
+                    activePaymentFilter === filter.value
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {filter.label}
+                  <span className={`text-[9px] px-1 rounded-full font-bold ${activePaymentFilter === filter.value ? 'bg-primary-foreground/20' : 'bg-background/50'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Orders list */}
@@ -574,6 +628,21 @@ const AdminOrders = () => {
                               <div className="flex justify-between items-center font-bold text-base pt-1.5 border-t border-border/20">
                                 <span className="font-display">Total</span>
                                 <span className="text-accent font-display">R$ {Number(order.total).toFixed(2)}</span>
+                              </div>
+
+                              {/* Payment Status Section */}
+                              <div className="pt-2 border-t border-border/20 mt-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status Pagamento</span>
+                                  {paymentStatusBadge(order.payment_status)}
+                                </div>
+                                {order.payment_method === 'pix' || order.payment_method === 'cartao_online' ? (
+                                  <p className="text-[9px] text-muted-foreground mt-1">
+                                    {order.payment_status === 'paid' ? '✅ Pago online' : order.payment_status === 'pending' ? '⏳ Aguardando pagamento' : '❌ Falhou'}
+                                  </p>
+                                ) : (
+                                  <p className="text-[9px] text-muted-foreground mt-1">💵 Cobrar na entrega</p>
+                                )}
                               </div>
                             </div>
 
