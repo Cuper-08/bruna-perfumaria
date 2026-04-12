@@ -6,7 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Phone, MapPin, Printer, Truck, CheckCircle, Clock, XCircle, AlertTriangle, MessageCircle, Pencil, ShoppingBag, Package, Sparkles, ChevronDown, PackageCheck, Bell, X } from 'lucide-react';
+import {
+  Phone, MapPin, Printer, Truck, CheckCircle, Clock, XCircle, AlertTriangle,
+  MessageCircle, Pencil, ShoppingBag, Sparkles, ChevronDown, PackageCheck,
+  Bell, X, CreditCard, Banknote, Smartphone, Wallet,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -34,12 +38,12 @@ interface OrderAddress {
 }
 
 const statusTabs = [
-  { value: 'all', label: 'Todos', icon: Clock },
   { value: 'received', label: 'Novos', icon: AlertTriangle },
   { value: 'preparing', label: 'Preparando', icon: Sparkles },
   { value: 'out_for_delivery', label: 'Em Entrega', icon: Truck },
   { value: 'delivered', label: 'Entregues', icon: CheckCircle },
   { value: 'cancelled', label: 'Cancelados', icon: XCircle },
+  { value: 'all', label: 'Todos', icon: Clock },
 ];
 
 const statusLabels: Record<string, string> = {
@@ -102,9 +106,38 @@ const paymentLabels: Record<string, string> = {
   cartao_entrega: 'Cartão Entrega',
 };
 
+const isOnlinePayment = (method: string) => method === 'pix' || method === 'cartao_online';
+const isDeliveryPayment = (method: string) => method === 'dinheiro_entrega' || method === 'cartao_entrega';
+
+// Payment method icon
+const PaymentIcon = ({ method, className = 'h-3 w-3' }: { method: string; className?: string }) => {
+  if (method === 'pix') return <Smartphone className={className} />;
+  if (method === 'cartao_online') return <CreditCard className={className} />;
+  if (method === 'dinheiro_entrega') return <Banknote className={className} />;
+  return <Wallet className={className} />;
+};
+
+// Payment badge: online vs entrega
+const PaymentTypeBadge = ({ method }: { method: string }) => {
+  if (isOnlinePayment(method)) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+        <PaymentIcon method={method} className="h-2.5 w-2.5" />
+        {paymentLabels[method]}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border border-orange-200 dark:border-orange-700">
+      <PaymentIcon method={method} className="h-2.5 w-2.5" />
+      COBRAR NA ENTREGA
+    </span>
+  );
+};
+
 const paymentStatusBadge = (status: string) => {
   if (status === 'paid') return <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 border-none text-[9px] px-1.5 py-0 h-4">PAGO</Badge>;
-  if (status === 'delivery_payment') return <Badge className="bg-amber-500 text-white hover:bg-amber-600 border-none text-[9px] px-1.5 py-0 h-4">ENTREGA</Badge>;
+  if (status === 'delivery_payment') return <Badge className="bg-orange-500 text-white hover:bg-orange-600 border-none text-[9px] px-1.5 py-0 h-4">ENTREGA</Badge>;
   if (status === 'failed') return <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4">FALHOU</Badge>;
   return <Badge className="bg-red-500 text-white hover:bg-red-600 border-none text-[9px] px-1.5 py-0 h-4">PENDENTE</Badge>;
 };
@@ -134,7 +167,6 @@ const getAvatarColor = (name: string) => {
   return avatarColors[Math.abs(hash) % avatarColors.length];
 };
 
-// Mini timeline dots (inline, no labels)
 const MiniTimeline = ({ status }: { status: string }) => {
   if (status === 'cancelled') {
     return (
@@ -160,7 +192,6 @@ const MiniTimeline = ({ status }: { status: string }) => {
   );
 };
 
-// Premium notification sound using Web Audio API
 const playNotificationSound = () => {
   try {
     const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
@@ -191,8 +222,7 @@ interface NewOrderBanner {
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState('all');
-  const [activePaymentFilter, setActivePaymentFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('received');
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -211,13 +241,9 @@ const AdminOrders = () => {
   }, []);
 
   const showNewOrderBanner = useCallback((order: Order) => {
-    // Clear previous banner timeout
     if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-    
     setNewOrderBanner({ order, visible: true });
     playNotificationSound();
-    
-    // Auto-dismiss after 8 seconds
     bannerTimeoutRef.current = setTimeout(() => {
       setNewOrderBanner(prev => prev ? { ...prev, visible: false } : null);
       setTimeout(() => setNewOrderBanner(null), 500);
@@ -238,26 +264,18 @@ const AdminOrders = () => {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
         const newOrder = payload.new as Order;
         setOrders((prev) => {
-          const exists = prev.some(o => o.id === newOrder.id);
-          if (exists) return prev;
+          if (prev.some(o => o.id === newOrder.id)) return prev;
           return [newOrder, ...prev];
         });
         showNewOrderBanner(newOrder);
-        toast({
-          title: '🔔 Novo Pedido!',
-          description: `Pedido #${newOrder.order_number} recebido`,
-        });
+        toast({ title: '🔔 Novo Pedido!', description: `Pedido #${newOrder.order_number} recebido` });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
         const updatedOrder = payload.new as Order;
         setOrders((prev) => prev.map((o) => {
           if (o.id === updatedOrder.id) {
-            // Show toast if payment status changed to paid
             if (o.payment_status !== 'paid' && updatedOrder.payment_status === 'paid') {
-              toast({
-                title: '✅ Pagamento Confirmado!',
-                description: `Pedido #${updatedOrder.order_number} foi pago`,
-              });
+              toast({ title: '✅ Pagamento Confirmado!', description: `Pedido #${updatedOrder.order_number} foi pago` });
             }
             return updatedOrder;
           }
@@ -266,7 +284,7 @@ const AdminOrders = () => {
       })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') {
-          console.warn('[AdminOrders] Realtime channel error, relying on polling fallback');
+          console.warn('[AdminOrders] Realtime channel error, polling fallback active');
         }
       });
 
@@ -315,24 +333,23 @@ const AdminOrders = () => {
     });
   };
 
-  const filtered = orders.filter((o) => {
-    const statusMatch = activeTab === 'all' || o.order_status === activeTab;
-    if (activePaymentFilter === 'all') return statusMatch;
-    if (activePaymentFilter === 'online') return statusMatch && (o.payment_method === 'pix' || o.payment_method === 'cartao_online');
-    if (activePaymentFilter === 'entrega') return statusMatch && (o.payment_method === 'dinheiro_entrega' || o.payment_method === 'cartao_entrega');
-    return statusMatch;
-  });
+  const filtered = activeTab === 'all' ? orders : orders.filter((o) => o.order_status === activeTab);
+
+  // Stats
+  const onlineOrders = orders.filter(o => isOnlinePayment(o.payment_method));
+  const deliveryOrders = orders.filter(o => isDeliveryPayment(o.payment_method));
+  const paidOnline = onlineOrders.filter(o => o.payment_status === 'paid');
+  const pendingOnline = onlineOrders.filter(o => o.payment_status === 'pending');
 
   return (
     <TooltipProvider>
       <div className="space-y-4 animate-fade-in">
+
         {/* New Order Banner */}
         {newOrderBanner && (
           <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-lg transition-all duration-500 ${newOrderBanner.visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <div className="relative bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 text-white rounded-2xl shadow-2xl shadow-emerald-500/30 p-4 flex items-center gap-3 overflow-hidden">
-              {/* Animated pulse background */}
               <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-pulse" />
-              
               <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm shrink-0">
                 <Bell className="h-6 w-6 animate-bounce" />
               </div>
@@ -342,7 +359,7 @@ const AdminOrders = () => {
                   #{newOrderBanner.order.order_number} • {newOrderBanner.order.customer_name} • R$ {Number(newOrderBanner.order.total).toFixed(2)}
                 </p>
               </div>
-              <button onClick={dismissBanner} className="relative p-1.5 rounded-lg hover:bg-white/20 transition-colors shrink-0">
+              <button type="button" aria-label="Fechar" onClick={dismissBanner} className="relative p-1.5 rounded-lg hover:bg-white/20 transition-colors shrink-0">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -373,38 +390,92 @@ const AdminOrders = () => {
           </Button>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+        {/* Financial Summary: Online vs Entrega */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Online */}
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100/30 dark:from-blue-950/40 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="p-1 rounded-lg bg-blue-100 dark:bg-blue-900/40">
+                <Smartphone className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="text-[11px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Pagamento Online</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-center">
+                <p className="text-xl font-bold font-display text-blue-700 dark:text-blue-300">{onlineOrders.length}</p>
+                <p className="text-[9px] text-blue-500 uppercase">Total</p>
+              </div>
+              <div className="h-8 w-px bg-blue-200 dark:bg-blue-700" />
+              <div className="text-center">
+                <p className="text-xl font-bold font-display text-emerald-600">{paidOnline.length}</p>
+                <p className="text-[9px] text-emerald-500 uppercase">Pagos</p>
+              </div>
+              <div className="h-8 w-px bg-blue-200 dark:bg-blue-700" />
+              <div className="text-center">
+                <p className="text-xl font-bold font-display text-red-500">{pendingOnline.length}</p>
+                <p className="text-[9px] text-red-400 uppercase">Pendentes</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Entrega */}
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100/30 dark:from-orange-950/40 dark:to-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <div className="p-1 rounded-lg bg-orange-100 dark:bg-orange-900/40">
+                <Banknote className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <span className="text-[11px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">Pagar na Entrega</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-center">
+                <p className="text-xl font-bold font-display text-orange-700 dark:text-orange-300">{deliveryOrders.length}</p>
+                <p className="text-[9px] text-orange-500 uppercase">Pedidos</p>
+              </div>
+              <div className="h-8 w-px bg-orange-200 dark:bg-orange-700" />
+              <div className="text-center">
+                <p className="text-lg font-bold font-display text-orange-700 dark:text-orange-300">
+                  R${deliveryOrders.reduce((s, o) => s + Number(o.total), 0).toFixed(0)}
+                </p>
+                <p className="text-[9px] text-orange-500 uppercase">A cobrar</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Status summary cards */}
+        <div className="grid grid-cols-5 gap-1.5">
           {statusTabs.filter(t => t.value !== 'all').map(tab => {
             const count = orders.filter(o => o.order_status === tab.value).length;
             const isActive = activeTab === tab.value;
             return (
               <button
                 key={tab.value}
+                type="button"
                 onClick={() => setActiveTab(prev => prev === tab.value ? 'all' : tab.value)}
-                className={`relative flex flex-col items-center gap-1 p-3 rounded-xl border-b-2 transition-all duration-200 ${
+                className={`relative flex flex-col items-center gap-1 p-2.5 rounded-xl border-b-2 transition-all duration-200 ${
                   isActive
                     ? `bg-gradient-to-br ${statusCardGradients[tab.value]} ${statusBottomBorder[tab.value]} shadow-md scale-[1.02] ring-1 ring-border/50`
                     : `border-b-transparent bg-card border border-border/30 hover:shadow-sm hover:border-border`
                 }`}
               >
-                <div className={`p-1.5 rounded-lg ${statusColors[tab.value]}`}>
-                  <tab.icon className="h-3.5 w-3.5" />
+                <div className={`p-1 rounded-lg ${statusColors[tab.value]}`}>
+                  <tab.icon className="h-3 w-3" />
                 </div>
-                <span className="text-2xl font-bold font-display leading-none">{count}</span>
-                <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider">{tab.label}</span>
+                <span className="text-xl font-bold font-display leading-none">{count}</span>
+                <span className="text-[8px] text-muted-foreground font-semibold uppercase tracking-wider">{tab.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Quick filter pills - Status */}
+        {/* Quick filter pills */}
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
           {statusTabs.map(tab => {
             const count = tab.value === 'all' ? orders.length : orders.filter(o => o.order_status === tab.value).length;
             return (
               <button
                 key={tab.value}
+                type="button"
                 onClick={() => setActiveTab(tab.value)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap ${
                   activeTab === tab.value
@@ -420,40 +491,6 @@ const AdminOrders = () => {
               </button>
             );
           })}
-        </div>
-
-        {/* Quick filter pills - Payment Type */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Forma:</span>
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {[
-              { value: 'all', label: 'Todas' },
-              { value: 'online', label: '💳 Online (PIX, Cartão)' },
-              { value: 'entrega', label: '🚚 Na Entrega' },
-            ].map(filter => {
-              const count = filter.value === 'all'
-                ? orders.length
-                : filter.value === 'online'
-                  ? orders.filter(o => o.payment_method === 'pix' || o.payment_method === 'cartao_online').length
-                  : orders.filter(o => o.payment_method === 'dinheiro_entrega' || o.payment_method === 'cartao_entrega').length;
-              return (
-                <button
-                  key={filter.value}
-                  onClick={() => setActivePaymentFilter(filter.value)}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap ${
-                    activePaymentFilter === filter.value
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {filter.label}
-                  <span className={`text-[9px] px-1 rounded-full font-bold ${activePaymentFilter === filter.value ? 'bg-primary-foreground/20' : 'bg-background/50'}`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         {/* Orders list */}
@@ -479,39 +516,39 @@ const AdminOrders = () => {
                   const avatarColor = getAvatarColor(order.customer_name);
                   const isExpanded = expandedOrders.has(order.id);
                   const totalItems = items.reduce((sum, it) => sum + it.quantity, 0);
+                  const isOnline = isOnlinePayment(order.payment_method);
+                  const isDelivery = isDeliveryPayment(order.payment_method);
 
                   return (
                     <Collapsible key={order.id} open={isExpanded} onOpenChange={() => toggleExpanded(order.id)}>
                       <Card
-                        className={`overflow-hidden rounded-xl border border-border/30 border-l-[3px] ${statusBorderColors[order.order_status] || ''} shadow-sm hover:shadow-md transition-all duration-200 animate-fade-in`}
+                        className={`overflow-hidden rounded-xl border border-border/30 border-l-[3px] ${statusBorderColors[order.order_status] || ''} shadow-sm hover:shadow-md transition-all duration-200 animate-fade-in ${
+                          isDelivery ? 'border-r-2 border-r-orange-300 dark:border-r-orange-700' : ''
+                        }`}
                         style={{ animationDelay: `${index * 40}ms` }}
                       >
                         {/* Compact header */}
                         <CollapsibleTrigger asChild>
                           <div className="flex items-center gap-2 p-3 cursor-pointer hover:bg-muted/20 transition-colors">
-                            {/* Mini timeline dots */}
                             <MiniTimeline status={order.order_status} />
 
-                            {/* Avatar */}
                             <div className={`flex items-center justify-center w-8 h-8 rounded-full ${avatarColor} text-white font-bold text-[10px] shrink-0`}>
                               {initials}
                             </div>
 
-                            {/* Main info */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-sm font-bold font-display">#{order.order_number}</span>
                                 <span className={`text-[8px] px-1.5 py-0 rounded-full font-bold uppercase tracking-wider ${statusColors[order.order_status]}`}>
                                   {statusLabels[order.order_status]}
                                 </span>
-                                {paymentStatusBadge(order.payment_status)}
+                                {isOnline && paymentStatusBadge(order.payment_status)}
+                                <PaymentTypeBadge method={order.payment_method} />
                               </div>
                               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
                                 <span>{order.customer_name.split(' ')[0]}</span>
                                 <span>•</span>
                                 <span>{totalItems} {totalItems === 1 ? 'item' : 'itens'}</span>
-                                <span>•</span>
-                                <span>{paymentLabels[order.payment_method]}</span>
                                 {addr.neighborhood && (
                                   <>
                                     <span>•</span>
@@ -521,7 +558,6 @@ const AdminOrders = () => {
                               </div>
                             </div>
 
-                            {/* Total + actions */}
                             <div className="flex items-center gap-1.5 shrink-0">
                               <span className="text-sm font-bold font-display text-accent">
                                 R$ {Number(order.total).toFixed(2)}
@@ -531,15 +567,15 @@ const AdminOrders = () => {
                           </div>
                         </CollapsibleTrigger>
 
-                        {/* Date line */}
+                        {/* Date + quick actions */}
                         <div className="px-3 pb-2 -mt-1 flex items-center justify-between">
                           <span className="text-[10px] text-muted-foreground">
                             {format(new Date(order.created_at!), "dd/MM 'às' HH:mm", { locale: ptBR })}
                           </span>
-                          {/* Quick action buttons */}
                           <div className="flex items-center gap-0.5">
                             {action && (
                               <Button
+                                type="button"
                                 onClick={(e) => { e.stopPropagation(); updateStatus(order.id, action.next); }}
                                 size="sm"
                                 className="h-6 text-[10px] px-2 rounded-lg bg-gradient-to-r from-bruna-dark to-bruna-dark/90 hover:from-bruna-red hover:to-bruna-red/90 text-white font-semibold gap-1"
@@ -550,7 +586,7 @@ const AdminOrders = () => {
                             )}
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-lg text-green-600" onClick={(e) => { e.stopPropagation(); openWhatsApp(order); }}>
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-lg text-green-600" onClick={(e) => { e.stopPropagation(); openWhatsApp(order); }}>
                                   <MessageCircle className="h-3 w-3" />
                                 </Button>
                               </TooltipTrigger>
@@ -558,7 +594,7 @@ const AdminOrders = () => {
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-lg" onClick={(e) => { e.stopPropagation(); openEdit(order); }}>
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 rounded-lg" onClick={(e) => { e.stopPropagation(); openEdit(order); }}>
                                   <Pencil className="h-3 w-3" />
                                 </Button>
                               </TooltipTrigger>
@@ -570,6 +606,7 @@ const AdminOrders = () => {
                         {/* Expanded content */}
                         <CollapsibleContent>
                           <CardContent className="space-y-3 pt-0 pb-3 border-t border-border/20">
+
                             {/* Client Info */}
                             <div className="flex items-center gap-2 pt-3 text-xs">
                               <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -615,42 +652,50 @@ const AdminOrders = () => {
                               </table>
                             </div>
 
-                            {/* Totals */}
-                            <div className="bg-gradient-to-r from-muted/30 to-transparent rounded-lg p-3 space-y-1">
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Subtotal</span>
-                                <span>R$ {Number(order.subtotal).toFixed(2)}</span>
+                            {/* Totals + Payment status */}
+                            <div className="rounded-lg overflow-hidden border border-border/20">
+                              <div className="bg-muted/20 p-3 space-y-1">
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>Subtotal</span>
+                                  <span>R$ {Number(order.subtotal).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>Entrega</span>
+                                  <span>R$ {Number(order.delivery_fee).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center font-bold text-base pt-1.5 border-t border-border/20">
+                                  <span className="font-display">Total</span>
+                                  <span className="text-accent font-display">R$ {Number(order.total).toFixed(2)}</span>
+                                </div>
                               </div>
-                              <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>Entrega</span>
-                                <span>R$ {Number(order.delivery_fee).toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between items-center font-bold text-base pt-1.5 border-t border-border/20">
-                                <span className="font-display">Total</span>
-                                <span className="text-accent font-display">R$ {Number(order.total).toFixed(2)}</span>
-                              </div>
-
-                              {/* Payment Status Section */}
-                              <div className="pt-2 border-t border-border/20 mt-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Status Pagamento</span>
+                              {/* Payment status banner */}
+                              {isOnline && (
+                                <div className={`px-3 py-2 flex items-center justify-between text-xs font-medium ${
+                                  order.payment_status === 'paid'
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300'
+                                    : order.payment_status === 'failed'
+                                    ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                                    : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+                                }`}>
+                                  <span>
+                                    {order.payment_status === 'paid' && '✅ Pagamento confirmado'}
+                                    {order.payment_status === 'pending' && '⏳ Aguardando pagamento'}
+                                    {order.payment_status === 'failed' && '❌ Pagamento falhou'}
+                                  </span>
                                   {paymentStatusBadge(order.payment_status)}
                                 </div>
-                                {order.payment_method === 'pix' || order.payment_method === 'cartao_online' ? (
-                                  <p className="text-[9px] text-muted-foreground mt-1">
-                                    {order.payment_status === 'paid' ? '✅ Pago online' : order.payment_status === 'pending' ? '⏳ Aguardando pagamento' : '❌ Falhou'}
-                                  </p>
-                                ) : (
-                                  <p className="text-[9px] text-muted-foreground mt-1">💵 Cobrar na entrega</p>
-                                )}
-                              </div>
+                              )}
+                              {isDelivery && (
+                                <div className="px-3 py-2 flex items-center justify-between text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300">
+                                  <span>
+                                    💵 Cobrar na entrega — {paymentLabels[order.payment_method]}
+                                    {order.payment_method === 'dinheiro_entrega' && order.needs_change && order.change_for
+                                      ? ` (troco p/ R$ ${Number(order.change_for).toFixed(2)})`
+                                      : ''}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-
-                            {order.payment_method === 'dinheiro_entrega' && order.needs_change && order.change_for && (
-                              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-2 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                                💵 Troco para: <strong>R$ {Number(order.change_for).toFixed(2)}</strong>
-                              </div>
-                            )}
 
                             {order.notes && (
                               <div className="bg-muted/20 rounded-lg p-2 text-xs text-muted-foreground flex items-start gap-1.5">
@@ -660,17 +705,13 @@ const AdminOrders = () => {
 
                             {/* Expanded actions */}
                             <div className="flex items-center gap-1 pt-1">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button variant="outline" size="sm" className="h-7 rounded-lg text-[10px] gap-1" onClick={() => handlePrint(order)}>
-                                    <Printer className="h-3 w-3" />
-                                    Imprimir
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Imprimir recibo</TooltipContent>
-                              </Tooltip>
+                              <Button type="button" variant="outline" size="sm" className="h-7 rounded-lg text-[10px] gap-1" onClick={() => handlePrint(order)}>
+                                <Printer className="h-3 w-3" />
+                                Imprimir
+                              </Button>
                               {order.order_status === 'received' && (
                                 <Button
+                                  type="button"
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 rounded-lg text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10 gap-1"
@@ -700,7 +741,6 @@ const AdminOrders = () => {
           onSaved={fetchOrders}
         />
 
-        {/* Hidden print receipt */}
         {printOrder && (
           <OrderReceiptPrint
             order={{
@@ -722,7 +762,6 @@ const AdminOrders = () => {
           />
         )}
 
-        {/* Hidden print list */}
         {showListPrint && <OrderListPrint orders={filtered} />}
       </div>
     </TooltipProvider>
