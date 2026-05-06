@@ -1,69 +1,96 @@
-# Logo Oficial nos Ícones do PWA — Responsivo, Moderno e Fiel à Marca
+# Header com botão "Voltar" em todas as páginas internas
 
-## Status atual do PWA
+## Problema diagnosticado (end-to-end)
 
-Sim, o PWA **já está ativo** neste projeto:
-- `public/manifest.json` configurado com `display: standalone`, `theme_color` e `background_color` `#1a1a2e`.
-- `index.html` com `<link rel="manifest">`, `apple-touch-icon`, `apple-mobile-web-app-capable` e `theme-color`.
-- Ícones existentes em `public/icons/` (192, 512 e apple-touch 180).
+Fiz uma varredura em todas as páginas da loja e confirmei o que você viu no print:
 
-O que **não está bom**: os ícones atuais foram gerados anteriormente como um fundo gradiente vermelho/azul com efeito "glassmorphism", mas a logo real da Bruna Perfumaria (`src/assets/bruna-logo.png`, 593×421) ainda não está aplicada de forma fiel — fica pequena, desalinhada e desaparece no recorte circular/squircle que o Android e o iOS aplicam.
+| Página | Botão de voltar no topo? |
+|---|---|
+| `/carrinho` (CartPage) | ❌ Não |
+| `/produto/:slug` (ProductPage) | ❌ Não |
+| `/categorias` (CategoriesPage) | ❌ Não |
+| `/categoria/:slug` (CategoryPage) | ❌ Não |
+| `/busca` (SearchPage) | ❌ Não |
+| `/destaques` (TrendingPage) | ❌ Não |
+| `/pedido/:id` (OrderConfirmation) | ❌ Não |
+| `/privacidade`, `/termos` | ❌ Não |
+| `/checkout` | ✅ Sim (único que tem) |
 
-## Objetivo
+**Causa raiz:** o `StoreLayout` renderiza apenas a barra promocional (marquee) + `main` + `Footer` + `BottomNavBar`. Não existe um header global. A bottom nav tem ícones de Home/Categorias/Destaques/Carrinho, mas nenhum botão de "voltar" contextual.
 
-Refazer os 3 ícones do PWA usando a **logo oficial** com leitura perfeita em qualquer formato de máscara (círculo Android, squircle iOS, quadrado), mantendo a paleta da marca e um acabamento moderno e premium.
+Resultado: quando o cliente entra no carrinho (ou em qualquer subpágina), a única forma de voltar é apertar o botão físico do navegador ou clicar em "Home" na bottom nav — nada intuitivo dentro do app, especialmente como PWA instalado.
 
-## Direção visual
+## Solução
 
-- **Paleta fiel ao app**:
-  - Fundo: gradiente diagonal de `#1a1a2e` (azul-noite — `background_color` do manifest) para `#2a1530` (toque ameixa) com vinheta sutil para dar profundidade.
-  - Acento: filete dourado fino (`#C9A24C`) na borda interna — alinhado ao "gold accents" da identidade Sephora-like.
-  - Toque vermelho da marca (`#E52535`) reservado para um brilho radial discreto atrás da logo, dando vida sem competir com ela.
-- **Logo**: `src/assets/bruna-logo.png` centralizada, ocupando ~62% do lado do ícone (área segura), garantindo que sobreviva ao recorte maskable de 80% do Android sem cortar nenhuma letra.
-- **Acabamento moderno**:
-  - Cantos arredondados (22% do lado) na versão `any` para parecer nativo no iOS.
-  - Reflexo de vidro suave no topo (faixa branca a 8% de opacidade) — glassmorphism contido, sem poluir.
-  - Sombra interna sutil para dar peso/profundidade.
+Criar um componente reutilizável `PageHeader` com botão de voltar + título, e usar nas páginas internas. Manter a Home (`/`) sem header (lá já existe a estrutura própria com logo, busca, etc.).
 
-## Arquivos gerados
+### 1. Novo componente `src/components/layout/PageHeader.tsx`
 
-| Arquivo | Tamanho | Uso | Purpose |
-|---|---|---|---|
-| `public/icons/icon-512.png` | 512×512 | Android splash + alta densidade | `any` |
-| `public/icons/icon-512-maskable.png` | 512×512 | Android adaptive icon (com safe zone de 80%) | `maskable` |
-| `public/icons/icon-192.png` | 192×192 | Android home / atalhos | `any` |
-| `public/icons/icon-192-maskable.png` | 192×192 | Android adaptive icon menor | `maskable` |
-| `public/icons/apple-touch-icon.png` | 180×180 | iOS "Adicionar à Tela de Início" | (sem máscara, cantos próprios do iOS) |
-| `public/icons/favicon-32.png` | 32×32 | Aba do navegador | — |
+- Sticky no topo (`sticky top-0 z-40`), abaixo da promo bar.
+- Fundo glassmorphism: `bg-white/85 backdrop-blur-xl` + borda inferior sutil dourada (`border-accent/15`).
+- Botão circular à esquerda com `ArrowLeft`:
+  - Comportamento inteligente: se `window.history.length > 1` → `navigate(-1)`; senão fallback para `/`.
+  - Tamanho 40×40, hover suave, área de toque confortável para mobile.
+- Título centralizado opcional (font-display, peso semibold, truncate).
+- Slot opcional à direita para ações (ex.: ícone de carrinho na ProductPage).
+- Respeita `env(safe-area-inset-top)` para iOS notch quando instalado como PWA.
 
-**Por que separar `any` e `maskable`**: hoje o manifest declara `purpose: "any maskable"` no mesmo arquivo, o que faz o Android cortar 20% do ícone — é por isso que a logo "some" nas bordas. Separar em dois arquivos é a prática recomendada e resolve o problema de responsividade entre dispositivos.
+### 2. Integrar nas páginas
 
-## Mudanças de código
+Adicionar `<PageHeader title="..." />` no topo de cada página que usa `StoreLayout`:
 
-1. **Script de geração** (`/tmp/gen-pwa-icons.mjs`, descartável) — usa `sharp` (já disponível via npx) para:
-   - Compor o gradiente de fundo + vinheta + brilho radial vermelho.
-   - Sobrepor a logo redimensionada com a área segura correta para cada `purpose`.
-   - Aplicar máscara de cantos arredondados na versão `any` e no apple-touch-icon.
-   - Exportar PNG otimizado (palette + compressão zlib 9).
+- **CartPage** → título "Carrinho" (remover `<h1>` redundante interno).
+- **ProductPage** → sem título (deixa a foto do produto respirar), mas mostra botão voltar + ícone de carrinho à direita.
+- **CategoriesPage** → "Categorias".
+- **CategoryPage** → nome da categoria atual.
+- **SearchPage** → "Buscar".
+- **TrendingPage** → "Em Alta".
+- **OrderConfirmationPage** → "Pedido Confirmado" (botão voltar leva para `/`, não history).
+- **PrivacyPage** → "Privacidade".
+- **TermsPage** → "Termos de Uso".
 
-2. **`public/manifest.json`** — atualizar a lista `icons` para apontar para os 5 arquivos com `purpose` correto em cada um, adicionar campo `id: "/"` (estabilidade de instalação) e manter `theme_color`/`background_color` da marca.
+### 3. Não mexer
 
-3. **`index.html`** — adicionar:
-   - `<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />`
-   - `<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />` (já existe, manter)
-   - Manter `theme-color` `#1a1a2e`.
+- `CheckoutPage` já tem seu próprio header com voltar — manter como está.
+- `Index` (home) — não recebe header (é a raiz).
+- Bottom nav, Footer, promo bar — inalterados.
 
-## QA visual obrigatório
+## Detalhes técnicos
 
-Antes de entregar, vou converter os 5 PNGs em previews e inspecionar:
-- A logo está totalmente legível dentro do círculo (Android adaptive)?
-- O acento dourado e o brilho aparecem sem virar ruído?
-- O contraste fundo↔logo está bom no modo claro do iOS e no fundo escuro do Android?
-- Não há serrilhado nas bordas arredondadas?
+```text
+[ promo bar marquee                       ]
+[ ◀  Carrinho                       (🛒) ]  ← novo PageHeader (sticky)
+[ ...conteúdo da página...                ]
+[ Footer                                  ]
+[ Bottom Nav (fixed)                      ]
+```
 
-Se qualquer item falhar, ajusto o script e regenero antes de finalizar.
+- Lógica do voltar:
+  ```ts
+  const navigate = useNavigate();
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  };
+  ```
+- Acessibilidade: `aria-label="Voltar"` no botão, foco visível.
+- Mobile-first: padding horizontal `px-4`, altura `h-14`, título truncado em telas pequenas.
 
-## Resultado esperado
+## Arquivos
 
-- PWA instalável no iPhone (Safari → Compartilhar → Adicionar à Tela de Início) e no Android (Chrome → Instalar app) com **ícone fiel à marca**, logo nítida em qualquer tamanho e adaptado às máscaras de cada SO.
-- Visual coerente com o resto do app: azul-noite + dourado + toque vermelho, acabamento premium, moderno.
+| Arquivo | Ação |
+|---|---|
+| `src/components/layout/PageHeader.tsx` | Criar |
+| `src/pages/CartPage.tsx` | Adicionar PageHeader, remover h1 duplicado |
+| `src/pages/ProductPage.tsx` | Adicionar PageHeader (sem título, com ação carrinho) |
+| `src/pages/CategoriesPage.tsx` | Adicionar PageHeader |
+| `src/pages/CategoryPage.tsx` | Adicionar PageHeader com nome dinâmico |
+| `src/pages/SearchPage.tsx` | Adicionar PageHeader |
+| `src/pages/TrendingPage.tsx` | Adicionar PageHeader |
+| `src/pages/OrderConfirmationPage.tsx` | Adicionar PageHeader |
+| `src/pages/PrivacyPage.tsx` | Adicionar PageHeader |
+| `src/pages/TermsPage.tsx` | Adicionar PageHeader |
+
+## Resultado
+
+Em qualquer página interna, o cliente vê no topo um botão circular ◀ que o leva de volta — exatamente como apps nativos (iFood, Shopee, Sephora). Solução consistente, premium e responsiva, alinhada à paleta atual (off-white + dourado + vermelho).
