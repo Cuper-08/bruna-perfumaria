@@ -6,6 +6,7 @@ import StoreLayout from '@/components/layout/StoreLayout';
 import PageHeader from '@/components/layout/PageHeader';
 import { Package, Sparkles, Droplets, Palette, Heart, Scissors, Leaf } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getCategoryImage } from '@/lib/category-icons';
 
 const iconMap: Record<string, React.ElementType> = {
   Package, Sparkles, Droplets, Palette, Heart, Scissors, Leaf,
@@ -69,6 +70,7 @@ const CategoriesPage = () => {
             : categories?.map((cat, i) => {
                 const IconComp = iconMap[cat.icon || 'Package'] || Package;
                 const gradient = gradients[i % gradients.length];
+                const image = getCategoryImage(cat.slug);
 
                 return (
                   <motion.div
@@ -81,17 +83,45 @@ const CategoriesPage = () => {
                   >
                     <Link
                       to={`/categoria/${cat.slug}`}
-                      className={`block aspect-[4/3] rounded-2xl bg-gradient-to-br ${gradient} border border-border/40 p-4 flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md transition-shadow duration-300`}
+                      className={`group relative block aspect-[4/3] rounded-2xl overflow-hidden border border-border/40 shadow-sm hover:shadow-lg transition-shadow duration-300 ${image ? '' : `bg-gradient-to-br ${gradient}`}`}
                     >
-                      <div className="h-12 w-12 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                        <IconComp className="h-6 w-6 text-primary" strokeWidth={1.5} />
-                      </div>
-                      <span className="text-sm font-semibold text-foreground text-center leading-tight">
-                        {cat.name}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground font-medium">
-                        {cat.productCount} {cat.productCount === 1 ? 'produto' : 'produtos'}
-                      </span>
+                      {image ? (
+                        <>
+                          <img
+                            src={image}
+                            alt={cat.name}
+                            loading="lazy"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          {/* Gradient overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                          {/* Product count pill */}
+                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/85 backdrop-blur-md text-[10px] font-semibold text-foreground/80 shadow-sm">
+                            {cat.productCount}
+                          </div>
+                          {/* Title overlay */}
+                          <div className="absolute bottom-0 left-0 right-0 p-3">
+                            <h3 className="font-display text-base font-semibold text-white leading-tight drop-shadow-md">
+                              {cat.name}
+                            </h3>
+                            <p className="text-[10px] text-white/80 font-medium mt-0.5">
+                              {cat.productCount} {cat.productCount === 1 ? 'produto' : 'produtos'}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-2">
+                          <div className="h-12 w-12 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                            <IconComp className="h-6 w-6 text-primary" strokeWidth={1.5} />
+                          </div>
+                          <span className="text-sm font-semibold text-foreground text-center leading-tight">
+                            {cat.name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {cat.productCount} {cat.productCount === 1 ? 'produto' : 'produtos'}
+                          </span>
+                        </div>
+                      )}
                     </Link>
                   </motion.div>
                 );
