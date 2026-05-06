@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+const SUPABASE_URL = 'https://opfnqkbssivwtkpzobyp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wZm5xa2Jzc2l2d3RrcHpvYnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MTcyMDgsImV4cCI6MjA5MDM5MzIwOH0.W5YBD2ZWaXgeQg7LxMlFToDlpUT_va1I1alJke2o8bI';
 
 export interface DeliverySettings {
   store_lat: number;
@@ -63,8 +65,15 @@ async function callGeocodeProxy(
     if (params.q) search.set('q', params.q);
     if (params.cep) search.set('cep', params.cep);
 
-    const { data, error } = await supabase.functions.invoke(`geocode-proxy?${search}`, { method: 'GET' });
-    if (error) return null;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/geocode-proxy?${search}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
     if (Array.isArray(data) && data.length > 0) {
       const lat = parseFloat(data[0].lat);
       const lon = parseFloat(data[0].lon);
