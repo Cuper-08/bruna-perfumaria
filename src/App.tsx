@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -35,7 +35,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
     },
   },
 });
@@ -46,6 +49,55 @@ const RouteFallback = () => (
   </div>
 );
 
+// Preload high-traffic store routes during browser idle time so navigation feels instant
+const usePreloadRoutes = () => {
+  useEffect(() => {
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback
+      || ((cb: () => void) => setTimeout(cb, 800));
+    idle(() => {
+      void import("./pages/CategoryPage");
+      void import("./pages/ProductPage");
+      void import("./pages/CartPage");
+      void import("./pages/CategoriesPage");
+    });
+  }, []);
+};
+
+const AppShell = () => {
+  usePreloadRoutes();
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/categoria/:slug" element={<CategoryPage />} />
+        <Route path="/produto/:slug" element={<ProductPage />} />
+        <Route path="/carrinho" element={<CartPage />} />
+        <Route path="/busca" element={<SearchPage />} />
+        <Route path="/categorias" element={<CategoriesPage />} />
+        <Route path="/destaques" element={<TrendingPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/pedido/:id" element={<OrderConfirmationPage />} />
+        <Route path="/privacidade" element={<PrivacyPage />} />
+        <Route path="/termos" element={<TermsPage />} />
+
+        <Route element={<AdminAuthLayout />}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="pedidos" element={<AdminOrders />} />
+            <Route path="produtos" element={<AdminProducts />} />
+            <Route path="categorias" element={<AdminCategories />} />
+            <Route path="aparencia" element={<AdminAppearance />} />
+            <Route path="config" element={<AdminSettings />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -54,35 +106,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ScrollToTop />
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/categoria/:slug" element={<CategoryPage />} />
-              <Route path="/produto/:slug" element={<ProductPage />} />
-              <Route path="/carrinho" element={<CartPage />} />
-              <Route path="/busca" element={<SearchPage />} />
-              <Route path="/categorias" element={<CategoriesPage />} />
-              <Route path="/destaques" element={<TrendingPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/pedido/:id" element={<OrderConfirmationPage />} />
-              <Route path="/privacidade" element={<PrivacyPage />} />
-              <Route path="/termos" element={<TermsPage />} />
-
-              <Route element={<AdminAuthLayout />}>
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="pedidos" element={<AdminOrders />} />
-                  <Route path="produtos" element={<AdminProducts />} />
-                  <Route path="categorias" element={<AdminCategories />} />
-                  <Route path="aparencia" element={<AdminAppearance />} />
-                  <Route path="config" element={<AdminSettings />} />
-                </Route>
-              </Route>
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+          <AppShell />
           <CookieBanner />
           <PWAInstallPrompt />
         </BrowserRouter>

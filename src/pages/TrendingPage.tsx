@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import StoreLayout from '@/components/layout/StoreLayout';
 import PageHeader from '@/components/layout/PageHeader';
@@ -22,7 +21,7 @@ const TrendingPage = () => {
       if (productIds.length > 0) {
         const { data: prods } = await supabase
           .from('products')
-          .select('*')
+          .select('id, title, slug, price, images, featured, active')
           .in('id', productIds)
           .eq('active', true);
 
@@ -37,7 +36,7 @@ const TrendingPage = () => {
       // Fallback: featured products
       const { data: featured } = await supabase
         .from('products')
-        .select('*')
+        .select('id, title, slug, price, images, featured, active')
         .eq('active', true)
         .eq('featured', true)
         .order('created_at', { ascending: false })
@@ -51,28 +50,12 @@ const TrendingPage = () => {
     <StoreLayout>
       <PageHeader title="Em Alta" />
       <div className="min-h-screen bg-background pb-24">
-        <div className="px-4 pt-6 pb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2"
-          >
-            <motion.div
-              animate={{ scale: [1, 1.15, 1] }}
-              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-            >
-              <Flame className="h-6 w-6 text-accent fill-accent" />
-            </motion.div>
+        <div className="px-4 pt-6 pb-4 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Flame className="h-6 w-6 text-accent fill-accent animate-pulse" />
             <h1 className="text-2xl font-display font-bold text-foreground">Em Alta</h1>
-          </motion.div>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="text-sm text-muted-foreground mt-1"
-          >
-            Os produtos mais procurados agora
-          </motion.p>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">Os produtos mais procurados agora</p>
         </div>
 
         <div className="px-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -81,13 +64,7 @@ const TrendingPage = () => {
                 <Skeleton key={i} className="aspect-[3/4] rounded-2xl" />
               ))
             : products?.map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.35 }}
-                  className="relative"
-                >
+                <div key={product.id} className="relative">
                   {i < 3 && (
                     <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-[10px] font-bold shadow-md">
                       🔥 Top {i + 1}
@@ -101,7 +78,7 @@ const TrendingPage = () => {
                     image={product.images?.[0]}
                     featured={product.featured ?? false}
                   />
-                </motion.div>
+                </div>
               ))}
         </div>
 

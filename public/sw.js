@@ -1,7 +1,7 @@
 // Bruna Perfumaria — Service Worker
 // Strategy: cache-first for static assets, network-first for HTML/API
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.1.0';
 const STATIC_CACHE = `bruna-static-${VERSION}`;
 const RUNTIME_CACHE = `bruna-runtime-${VERSION}`;
 
@@ -33,6 +33,21 @@ self.addEventListener('fetch', (event) => {
 
   if (request.method !== 'GET') return;
   if (url.origin !== self.location.origin && !url.hostname.includes('supabase')) return;
+
+  // Supabase rendered images (transformed on the fly) → stale-while-revalidate, cached aggressively
+  if (url.pathname.includes('/storage/v1/render/image/public/') || url.pathname.includes('/storage/v1/object/public/product-images/')) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        const networkPromise = fetch(request).then((res) => {
+          if (res.ok) cache.put(request, res.clone());
+          return res;
+        }).catch(() => cached);
+        return cached || networkPromise;
+      })
+    );
+    return;
+  }
 
   // HTML & API → network-first
   if (request.headers.get('accept')?.includes('text/html') || url.pathname.startsWith('/rest/') || url.pathname.startsWith('/functions/')) {

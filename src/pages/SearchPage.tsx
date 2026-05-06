@@ -1,5 +1,4 @@
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import StoreLayout from '@/components/layout/StoreLayout';
 import PageHeader from '@/components/layout/PageHeader';
@@ -16,11 +15,7 @@ const SearchPage = () => {
     <StoreLayout>
       <PageHeader title="Buscar" />
       <div className="container mx-auto px-4 py-8 min-h-[60vh]">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <div className="mb-8 animate-fade-in">
           <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
             Resultados para "<span className="text-primary">{query}</span>"
           </h1>
@@ -29,7 +24,7 @@ const SearchPage = () => {
               {products.length} {products.length === 1 ? 'produto encontrado' : 'produtos encontrados'}
             </p>
           )}
-        </motion.div>
+        </div>
 
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -42,40 +37,21 @@ const SearchPage = () => {
             ))}
           </div>
         ) : products && products.length > 0 ? (
-          <motion.div
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: {},
-              show: { transition: { staggerChildren: 0.05 } },
-            }}
-          >
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
-              <motion.div
+              <ProductCard
                 key={product.id}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  show: { opacity: 1, y: 0 },
-                }}
-              >
-                <ProductCard
-                  id={product.id}
-                  title={product.title}
-                  slug={product.slug}
-                  price={product.price}
-                  image={product.images?.[0]}
-                  featured={product.featured ?? false}
-                />
-              </motion.div>
+                id={product.id}
+                title={product.title}
+                slug={product.slug}
+                price={product.price}
+                image={product.images?.[0]}
+                featured={product.featured ?? false}
+              />
             ))}
-          </motion.div>
+          </div>
         ) : query.length >= 2 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
+          <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <Search className="h-7 w-7 text-muted-foreground" />
             </div>
@@ -83,7 +59,7 @@ const SearchPage = () => {
             <p className="text-sm text-muted-foreground max-w-sm">
               Não encontramos resultados para "{query}". Tente buscar com outros termos.
             </p>
-          </motion.div>
+          </div>
         ) : null}
       </div>
     </StoreLayout>

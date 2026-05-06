@@ -32,8 +32,8 @@ const CategoryPage = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', slug, sort],
     queryFn: async () => {
-      let query = supabase.from('products').select('*');
-      
+      let query = supabase.from('products').select('id, title, slug, price, images, featured').eq('active', true);
+
       if (category?.id) {
         query = query.eq('category_id', category.id);
       }
@@ -42,7 +42,7 @@ const CategoryPage = () => {
       else if (sort === 'price_desc') query = query.order('price', { ascending: false });
       else query = query.order('created_at', { ascending: false });
 
-      const { data, error } = await query;
+      const { data, error } = await query.limit(60);
       if (error) throw error;
       return data;
     },

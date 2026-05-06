@@ -10,6 +10,7 @@ import { useState, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { optimizedImage, srcSet } from '@/lib/image';
 
 const FlyingDot = ({ startX, startY, onDone }: { startX: number; startY: number; onDone: () => void }) => {
   const endX = window.innerWidth - 28;
@@ -138,9 +139,16 @@ const ProductPage = () => {
           <div className="space-y-3">
             <div className="aspect-square bg-card rounded-2xl overflow-hidden shadow-sm border border-border/30">
               <img
-                src={images[selectedImage]}
+                src={optimizedImage(images[selectedImage], { width: 800, quality: 80 })}
+                srcSet={srcSet(images[selectedImage], 800, { quality: 80 }) || undefined}
+                sizes="(max-width: 768px) 100vw, 50vw"
                 alt={product.title}
                 className="w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                width={800}
+                height={800}
               />
             </div>
             {images.length > 1 && (
@@ -148,12 +156,14 @@ const ProductPage = () => {
                 {images.map((img, i) => (
                   <button
                     key={i}
+                    type="button"
+                    aria-label={`Imagem ${i + 1}`}
                     onClick={() => setSelectedImage(i)}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-200 shrink-0 ${
                       i === selectedImage ? 'border-accent shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={optimizedImage(img, { width: 120, quality: 60 })} alt="" loading="lazy" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
