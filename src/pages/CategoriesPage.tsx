@@ -62,10 +62,13 @@ const CategoriesPage = () => {
           </motion.p>
         </div>
 
-        <div className="px-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="px-4 grid grid-cols-3 gap-x-3 gap-y-5">
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-[4/3] rounded-2xl" />
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <Skeleton className="aspect-square w-full rounded-2xl" />
+                  <Skeleton className="h-3 w-16 rounded-full" />
+                </div>
               ))
             : categories?.map((cat, i) => {
                 const IconComp = iconMap[cat.icon || 'Package'] || Package;
@@ -78,50 +81,35 @@ const CategoriesPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06, duration: 0.35 }}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ y: -3 }}
+                    whileTap={{ scale: 0.96 }}
                   >
                     <Link
                       to={`/categoria/${cat.slug}`}
-                      className={`group relative block aspect-[4/3] rounded-2xl overflow-hidden border border-border/40 shadow-sm hover:shadow-lg transition-shadow duration-300 ${image ? '' : `bg-gradient-to-br ${gradient}`}`}
+                      className="group flex flex-col items-center gap-2"
                     >
                       {image ? (
-                        <>
+                        <div className="relative w-full aspect-square rounded-2xl overflow-hidden ring-1 ring-accent/10 shadow-sm group-hover:shadow-lg group-hover:ring-accent/30 transition-all duration-300">
                           <img
                             src={image}
                             alt={cat.name}
                             loading="lazy"
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
-                          {/* Gradient overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                          {/* Product count pill */}
-                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/85 backdrop-blur-md text-[10px] font-semibold text-foreground/80 shadow-sm">
-                            {cat.productCount}
-                          </div>
-                          {/* Title overlay */}
-                          <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <h3 className="font-display text-base font-semibold text-white leading-tight drop-shadow-md">
-                              {cat.name}
-                            </h3>
-                            <p className="text-[10px] text-white/80 font-medium mt-0.5">
-                              {cat.productCount} {cat.productCount === 1 ? 'produto' : 'produtos'}
-                            </p>
-                          </div>
-                        </>
+                          {cat.productCount > 0 && (
+                            <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-white/85 backdrop-blur-md text-[9px] font-semibold text-foreground/80 shadow-sm">
+                              {cat.productCount}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                        <div className="w-full h-full p-4 flex flex-col items-center justify-center gap-2">
-                          <div className="h-12 w-12 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                            <IconComp className="h-6 w-6 text-primary" strokeWidth={1.5} />
-                          </div>
-                          <span className="text-sm font-semibold text-foreground text-center leading-tight">
-                            {cat.name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-medium">
-                            {cat.productCount} {cat.productCount === 1 ? 'produto' : 'produtos'}
-                          </span>
+                        <div className={`w-full aspect-square rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center ring-1 ring-border/40 shadow-sm group-hover:shadow-md transition-all duration-300`}>
+                          <IconComp className="h-8 w-8 text-primary" strokeWidth={1.5} />
                         </div>
                       )}
+                      <span className="text-xs font-medium tracking-wide text-foreground/80 group-hover:text-foreground transition-colors text-center leading-tight">
+                        {cat.name}
+                      </span>
                     </Link>
                   </motion.div>
                 );
