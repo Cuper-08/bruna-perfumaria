@@ -1,4 +1,5 @@
 import { MapPin, Phone, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import brunaLogo from '@/assets/bruna-logo.png';
 import { useStoreCustomization } from '@/hooks/useStoreCustomization';
 
@@ -48,8 +49,13 @@ const Footer = () => {
         <div className="premium-divider mt-8 mb-6" />
 
         <div className="flex flex-col items-center gap-3 text-center">
+          <div className="flex items-center gap-3 text-[10px] text-white/40 tracking-widest uppercase">
+            <Link to="/privacidade" className="hover:text-white/70 transition-colors">Privacidade</Link>
+            <span className="text-white/20">•</span>
+            <Link to="/termos" className="hover:text-white/70 transition-colors">Termos</Link>
+          </div>
           <p className="text-[10px] text-white/25 tracking-widest uppercase">
-            © {new Date().getFullYear()} Bruna Perfumaria. Todos os direitos reservados.
+            © {new Date().getFullYear()} Bruna Perfumaria · CNPJ 10.474.012/0001-01
           </p>
           <a
             href="https://www.hsbmarketing.com.br/"

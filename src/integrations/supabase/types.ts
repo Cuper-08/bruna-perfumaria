@@ -113,6 +113,7 @@ export type Database = {
           notes: string | null
           order_number: number
           order_status: Database["public"]["Enums"]["order_status_type"]
+          order_token: string
           payment_method: Database["public"]["Enums"]["payment_method_type"]
           payment_status: Database["public"]["Enums"]["payment_status_type"]
           pix_copy_paste: string | null
@@ -139,6 +140,7 @@ export type Database = {
           notes?: string | null
           order_number?: number
           order_status?: Database["public"]["Enums"]["order_status_type"]
+          order_token?: string
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           payment_status?: Database["public"]["Enums"]["payment_status_type"]
           pix_copy_paste?: string | null
@@ -165,6 +167,7 @@ export type Database = {
           notes?: string | null
           order_number?: number
           order_status?: Database["public"]["Enums"]["order_status_type"]
+          order_token?: string
           payment_method?: Database["public"]["Enums"]["payment_method_type"]
           payment_status?: Database["public"]["Enums"]["payment_status_type"]
           pix_copy_paste?: string | null
@@ -225,6 +228,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limit: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
       }
       store_customization: {
         Row: {
@@ -291,6 +312,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: boolean
+      }
+      get_order_by_token: {
+        Args: { p_id: string; p_token: string }
+        Returns: {
+          address: Json
+          asaas_customer_id: string | null
+          asaas_payment_id: string | null
+          change_for: number | null
+          created_at: string | null
+          customer_cpf: string | null
+          customer_name: string
+          customer_phone: string
+          delivery_fee: number
+          id: string
+          invoice_url: string | null
+          items: Json
+          needs_change: boolean | null
+          notes: string | null
+          order_number: number
+          order_status: Database["public"]["Enums"]["order_status_type"]
+          order_token: string
+          payment_method: Database["public"]["Enums"]["payment_method_type"]
+          payment_status: Database["public"]["Enums"]["payment_status_type"]
+          pix_copy_paste: string | null
+          pix_expire_date: string | null
+          pix_qr_code: string | null
+          subtotal: number
+          total: number
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_trending_products: {
         Args: { days_back?: number; max_results?: number }
         Returns: {
@@ -499,3 +560,4 @@ export const Constants = {
     },
   },
 } as const
+<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />

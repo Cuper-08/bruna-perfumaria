@@ -9,8 +9,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   Phone, MapPin, Printer, Truck, CheckCircle, Clock, XCircle, AlertTriangle,
   MessageCircle, Pencil, ShoppingBag, Sparkles, ChevronDown, PackageCheck,
-  Bell, X, CreditCard, Banknote, Smartphone, Wallet,
+  Bell, X, CreditCard, Banknote, Smartphone, Wallet, Search, Download, BellRing,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -220,17 +222,28 @@ interface NewOrderBanner {
   visible: boolean;
 }
 
+const AUTOPRINT_KEY = 'bruna-autoprint';
+const NOTIFY_KEY = 'bruna-notify';
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState('received');
+  const [search, setSearch] = useState('');
   const [printOrder, setPrintOrder] = useState<Order | null>(null);
   const [editOrder, setEditOrder] = useState<Order | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showListPrint, setShowListPrint] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [newOrderBanner, setNewOrderBanner] = useState<NewOrderBanner | null>(null);
+  const [autoprint, setAutoprint] = useState(() => localStorage.getItem(AUTOPRINT_KEY) === '1');
+  const [notifyEnabled, setNotifyEnabled] = useState(() => localStorage.getItem(NOTIFY_KEY) === '1');
   const { toast } = useToast();
   const bannerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoprintRef = useRef(autoprint);
+  const notifyRef = useRef(notifyEnabled);
+
+  useEffect(() => { autoprintRef.current = autoprint; localStorage.setItem(AUTOPRINT_KEY, autoprint ? '1' : '0'); }, [autoprint]);
+  useEffect(() => { notifyRef.current = notifyEnabled; localStorage.setItem(NOTIFY_KEY, notifyEnabled ? '1' : '0'); }, [notifyEnabled]);
 
   const fetchOrders = useCallback(async () => {
     const { data } = await supabase
@@ -269,6 +282,24 @@ const AdminOrders = () => {
         });
         showNewOrderBanner(newOrder);
         toast({ title: '🔔 Novo Pedido!', description: `Pedido #${newOrder.order_number} recebido` });
+
+        // Browser notification (when tab is in background)
+        if (notifyRef.current && 'Notification' in window && Notification.permission === 'granted') {
+          try {
+            new Notification('🔔 Novo pedido!', {
+              body: `#${newOrder.order_number} • ${newOrder.customer_name} • R$ ${Number(newOrder.total).toFixed(2)}`,
+              icon: '/icons/icon-192.png',
+              tag: `order-${newOrder.id}`,
+            });
+          } catch { /* ignore */ }
+        }
+
+        // Auto-print receipt
+        if (autoprintRef.current) {
+          setPrintOrder(newOrder);
+          setShowListPrint(false);
+          setTimeout(() => window.print(), 800);
+        }
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
         const updatedOrder = payload.new as Order;
@@ -333,7 +364,63 @@ const AdminOrders = () => {
     });
   };
 
-  const filtered = activeTab === 'all' ? orders : orders.filter((o) => o.order_status === activeTab);
+  const filtered = (() => {
+    let list = activeTab === 'all' ? orders : orders.filter((o) => o.order_status === activeTab);
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(o =>
+        String(o.order_number).includes(q) ||
+        o.customer_name.toLowerCase().includes(q) ||
+        o.customer_phone.replace(/\D/g, '').includes(q.replace(/\D/g, ''))
+      );
+    }
+    return list;
+  })();
+
+  const requestNotifyPermission = async () => {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      setNotifyEnabled(true);
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      toast({ title: 'Permissão negada', description: 'Habilite notificações nas configurações do navegador.' });
+      return;
+    }
+    const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      setNotifyEnabled(true);
+      toast({ title: '✅ Notificações ativadas', description: 'Você será avisado de novos pedidos mesmo com a aba em segundo plano.' });
+    }
+  };
+
+  const exportCSV = () => {
+    const headers = ['Pedido', 'Data', 'Cliente', 'Telefone', 'Bairro', 'Pagamento', 'Status Pag.', 'Status', 'Subtotal', 'Entrega', 'Total'];
+    const rows = filtered.map(o => {
+      const addr = (o.address || {}) as { neighborhood?: string };
+      return [
+        o.order_number,
+        format(new Date(o.created_at!), 'dd/MM/yyyy HH:mm'),
+        o.customer_name,
+        o.customer_phone,
+        addr.neighborhood || '',
+        paymentLabels[o.payment_method] || o.payment_method,
+        o.payment_status,
+        o.order_status,
+        Number(o.subtotal).toFixed(2),
+        Number(o.delivery_fee).toFixed(2),
+        Number(o.total).toFixed(2),
+      ];
+    });
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pedidos-${format(new Date(), 'yyyy-MM-dd-HHmm')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Stats
   const onlineOrders = orders.filter(o => isOnlinePayment(o.payment_method));
@@ -383,11 +470,49 @@ const AdminOrders = () => {
               Tempo real
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handlePrintList} className="rounded-xl border-border/50 hover:shadow-md hover:border-accent/30 transition-all gap-1.5 h-8 text-xs">
-            <Printer className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Imprimir</span>
-            <Badge className="bg-muted text-muted-foreground text-[9px] px-1 py-0 h-4">{filtered.length}</Badge>
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" onClick={exportCSV} className="rounded-xl border-border/50 hover:shadow-md hover:border-accent/30 transition-all gap-1.5 h-8 text-xs">
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">CSV</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePrintList} className="rounded-xl border-border/50 hover:shadow-md hover:border-accent/30 transition-all gap-1.5 h-8 text-xs">
+              <Printer className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Imprimir</span>
+              <Badge className="bg-muted text-muted-foreground text-[9px] px-1 py-0 h-4">{filtered.length}</Badge>
+            </Button>
+          </div>
+        </div>
+
+        {/* Search + toolbar */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por número, nome ou telefone..."
+              className="pl-9 h-9 text-sm rounded-xl bg-card border-border/50"
+            />
+          </div>
+          <div className="flex items-center gap-3 px-3 bg-muted/40 rounded-xl">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch checked={autoprint} onCheckedChange={setAutoprint} />
+              <span className="text-[11px] font-medium flex items-center gap-1">
+                <Printer className="h-3 w-3" /> Auto-imprimir
+              </span>
+            </label>
+            <div className="h-6 w-px bg-border" />
+            <button
+              type="button"
+              onClick={notifyEnabled ? () => setNotifyEnabled(false) : requestNotifyPermission}
+              className={`flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors ${
+                notifyEnabled ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              <BellRing className="h-3 w-3" /> {notifyEnabled ? 'Notif. ativas' : 'Ativar notif.'}
+            </button>
+          </div>
         </div>
 
         {/* Financial Summary: Online vs Entrega */}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface DeliverySettings {
   store_lat: number;
@@ -52,6 +53,29 @@ function isReasonableResult(lat: number, lon: number, s: DeliverySettings): bool
   return dist <= s.delivery_max_radius_km * 3;
 }
 
+async function callGeocodeProxy(
+  provider: 'locationiq' | 'nominatim',
+  params: { q?: string; cep?: string },
+  settings: DeliverySettings
+): Promise<GpsCoords | null> {
+  try {
+    const search = new URLSearchParams({ provider });
+    if (params.q) search.set('q', params.q);
+    if (params.cep) search.set('cep', params.cep);
+
+    const { data, error } = await supabase.functions.invoke(`geocode-proxy?${search}`, { method: 'GET' });
+    if (error) return null;
+    if (Array.isArray(data) && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+      if (!isNaN(lat) && !isNaN(lon) && isReasonableResult(lat, lon, settings)) {
+        return { lat, lon };
+      }
+    }
+  } catch { /* swallow */ }
+  return null;
+}
+
 async function locationiqGeocode(
   street: string,
   city: string,
@@ -59,36 +83,16 @@ async function locationiqGeocode(
   cep: string,
   settings: DeliverySettings
 ): Promise<GpsCoords | null> {
-  const apiKey = import.meta.env.VITE_LOCATIONIQ_API_KEY || 'pk.e71d875c8c098f20e60c6ac00ef07f8a';
-
-  const tryQuery = async (params: Record<string, string>): Promise<GpsCoords | null> => {
-    try {
-      const qParams = new URLSearchParams({ key: apiKey, format: 'json', limit: '1', countrycodes: 'br', ...params });
-      const res = await fetch(`https://us1.locationiq.com/v1/search?${qParams.toString()}`);
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-        // Reject if result is suspiciously far from store (wrong city/state)
-        if (isReasonableResult(lat, lon, settings)) {
-          return { lat, lon };
-        }
-      }
-    } catch { /* network error */ }
-    return null;
-  };
-
   if (cep && street) {
-    const r = await tryQuery({ postalcode: cep, street });
+    const r = await callGeocodeProxy('locationiq', { q: `${street}, ${city}, ${state}, ${cep}, Brasil`, cep }, settings);
     if (r) return r;
   }
   if (cep) {
-    const r = await tryQuery({ postalcode: cep });
+    const r = await callGeocodeProxy('locationiq', { cep }, settings);
     if (r) return r;
   }
   if (street && city) {
-    const r = await tryQuery({ q: `${street}, ${city}, ${state}, Brasil` });
+    const r = await callGeocodeProxy('locationiq', { q: `${street}, ${city}, ${state}, Brasil` }, settings);
     if (r) return r;
   }
   return null;
@@ -101,35 +105,16 @@ async function nominatimGeocode(
   state: string,
   settings: DeliverySettings
 ): Promise<GpsCoords | null> {
-  const headers = { 'Accept-Language': 'pt-BR', 'User-Agent': 'BrunaPerfumaria/1.0' };
-
-  const tryQuery = async (q: string): Promise<GpsCoords | null> => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=br`,
-        { headers }
-      );
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-        if (isReasonableResult(lat, lon, settings)) return { lat, lon };
-      }
-    } catch { /* network error */ }
-    return null;
-  };
-
   if (street && neighborhood) {
-    const r = await tryQuery(`${street}, ${neighborhood}, ${city}, ${state}, Brasil`);
+    const r = await callGeocodeProxy('nominatim', { q: `${street}, ${neighborhood}, ${city}, ${state}, Brasil` }, settings);
     if (r) return r;
   }
   if (street) {
-    const r = await tryQuery(`${street}, ${city}, ${state}, Brasil`);
+    const r = await callGeocodeProxy('nominatim', { q: `${street}, ${city}, ${state}, Brasil` }, settings);
     if (r) return r;
   }
-  // Neighborhood centroid as last resort — approximate but better than nothing
   if (neighborhood) {
-    const r = await tryQuery(`${neighborhood}, ${city}, ${state}, Brasil`);
+    const r = await callGeocodeProxy('nominatim', { q: `${neighborhood}, ${city}, ${state}, Brasil` }, settings);
     if (r) return r;
   }
   return null;

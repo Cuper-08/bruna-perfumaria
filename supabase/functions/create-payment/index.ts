@@ -37,6 +37,20 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
+    // Rate limit: 5 orders per IP per 5 minutes
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const { data: rlOk } = await supabase.rpc('check_rate_limit', {
+      p_key: `create-payment:${ip}`,
+      p_max: 5,
+      p_window_seconds: 300,
+    })
+    if (rlOk === false) {
+      return new Response(
+        JSON.stringify({ error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const payload = await req.json()
     const {
       customer_name,
@@ -53,6 +67,14 @@ Deno.serve(async (req) => {
       delivery_fee,
       total,
     } = payload
+
+    // Basic validation
+    if (!customer_name || !customer_phone || !Array.isArray(items) || items.length === 0 || !total || total <= 0) {
+      return new Response(
+        JSON.stringify({ error: 'Dados do pedido inválidos.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const needsAsaasCharge = payment_method === 'pix' || payment_method === 'cartao_online'
 
@@ -187,6 +209,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         order_id: order.id,
+        order_token: order.order_token,
         order_number: order.order_number,
         payment_method,
         pix_qr_code,

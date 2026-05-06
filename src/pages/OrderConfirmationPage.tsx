@@ -1,40 +1,55 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Package, ArrowLeft, Copy, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
+type Order = Tables<'orders'>;
+
 export default function OrderConfirmationPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<Tables<'orders'> | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  const token = searchParams.get('t') || localStorage.getItem(`order-token-${id}`) || '';
 
   useEffect(() => {
     window.scrollTo(0, 0);
     if (!id) return;
-    supabase.from('orders').select('*').eq('id', id).single()
+    if (!token) { setAccessDenied(true); setLoading(false); return; }
+
+    supabase.rpc('get_order_by_token', { p_id: id, p_token: token })
       .then(({ data }) => {
-        setOrder(data);
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          setAccessDenied(true);
+        } else {
+          const fetched = Array.isArray(data) ? data[0] : data;
+          setOrder(fetched as Order);
+          localStorage.setItem(`order-token-${id}`, token);
+        }
         setLoading(false);
       });
-  }, [id]);
+  }, [id, token]);
 
   // Poll for payment updates (PIX and card online)
   useEffect(() => {
     if (!order || order.payment_status !== 'pending') return;
     if (order.payment_method !== 'pix' && order.payment_method !== 'cartao_online') return;
     const interval = setInterval(async () => {
-      const { data } = await supabase.from('orders').select('payment_status, pix_qr_code, pix_copy_paste').eq('id', order.id).single();
-      if (data && (data.payment_status !== 'pending' || data.pix_qr_code)) {
-        setOrder(prev => prev ? { ...prev, ...data } : prev);
-        if (data.payment_status === 'paid') clearInterval(interval);
+      const { data } = await supabase.rpc('get_order_by_token', { p_id: order.id, p_token: token });
+      const fresh = Array.isArray(data) ? data[0] : data;
+      if (fresh && (fresh.payment_status !== 'pending' || fresh.pix_qr_code)) {
+        setOrder(prev => prev ? { ...prev, ...fresh } : prev);
+        if (fresh.payment_status === 'paid') clearInterval(interval);
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [order]);
+  }, [order, token]);
 
   if (loading) {
     return (
@@ -44,10 +59,12 @@ export default function OrderConfirmationPage() {
     );
   }
 
-  if (!order) {
+  if (accessDenied || !order) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Pedido não encontrado</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-muted-foreground">
+          {accessDenied ? 'Acesso negado. Link inválido ou expirado.' : 'Pedido não encontrado'}
+        </p>
         <Button onClick={() => navigate('/')}>Voltar à Loja</Button>
       </div>
     );
@@ -82,7 +99,6 @@ export default function OrderConfirmationPage() {
           <p className="text-muted-foreground">Pedido #{order.order_number}</p>
         </motion.div>
 
-        {/* Card online area */}
         {order.payment_method === 'cartao_online' && order.payment_status === 'pending' && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -116,7 +132,6 @@ export default function OrderConfirmationPage() {
           </motion.div>
         )}
 
-        {/* PIX area */}
         {order.payment_method === 'pix' && order.payment_status === 'pending' && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -136,7 +151,7 @@ export default function OrderConfirmationPage() {
                     <p className="text-xs text-muted-foreground mb-2">Ou copie o código:</p>
                     <div className="flex items-center gap-2 bg-muted rounded-xl p-3">
                       <code className="text-xs flex-1 break-all text-foreground">{order.pix_copy_paste.slice(0, 60)}...</code>
-                      <Button size="icon" variant="ghost" onClick={() => {
+                      <Button size="icon" variant="ghost" aria-label="Copiar código PIX" onClick={() => {
                         navigator.clipboard.writeText(order.pix_copy_paste || '');
                       }}>
                         <Copy className="h-4 w-4" />
@@ -154,14 +169,12 @@ export default function OrderConfirmationPage() {
           </motion.div>
         )}
 
-        {/* Payment confirmed */}
         {order.payment_status === 'paid' && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 text-center">
             <p className="text-green-700 font-medium">✅ Pagamento confirmado!</p>
           </div>
         )}
 
-        {/* Order summary */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Package className="h-5 w-5 text-primary" />

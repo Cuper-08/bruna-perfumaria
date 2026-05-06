@@ -298,56 +298,34 @@ export default function CheckoutPage() {
         image: i.image,
       }));
 
-      if (isOnlinePayment) {
-        const { data, error } = await supabase.functions.invoke('create-payment', {
-          body: {
-            customer_name: name.trim(),
-            customer_phone: phone.replace(/\D/g, ''),
-            customer_cpf: cpf.replace(/\D/g, ''),
-            address,
-            items: orderItems,
-            payment_method: paymentMethod,
-            installments: paymentMethod === 'cartao_online' ? installments : 1,
-            needs_change: false,
-            change_for: null,
-            notes: notes.trim() || null,
-            subtotal,
-            delivery_fee: effectiveDeliveryFee,
-            total,
-          },
-        });
+      const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: {
+          customer_name: name.trim(),
+          customer_phone: phone.replace(/\D/g, ''),
+          customer_cpf: cpf.replace(/\D/g, '') || null,
+          address,
+          items: orderItems,
+          payment_method: paymentMethod,
+          installments: paymentMethod === 'cartao_online' ? installments : 1,
+          needs_change: needsChange,
+          change_for: needsChange ? parseFloat(changeFor) || null : null,
+          notes: notes.trim() || null,
+          subtotal,
+          delivery_fee: effectiveDeliveryFee,
+          total,
+        },
+      });
 
-        if (error || data?.error) {
-          throw new Error(data?.error || 'Erro ao processar pagamento. Tente novamente.');
-        }
-
-        clearCart();
-        navigate(`/pedido/${data.order_id}`);
-      } else {
-        const { data, error } = await supabase
-          .from('orders')
-          .insert({
-            customer_name: name.trim(),
-            customer_phone: phone.replace(/\D/g, ''),
-            customer_cpf: cpf.replace(/\D/g, '') || null,
-            notes: notes.trim() || null,
-            address,
-            items: orderItems,
-            subtotal,
-            delivery_fee: effectiveDeliveryFee,
-            total,
-            payment_method: paymentMethod,
-            payment_status: 'delivery_payment',
-            needs_change: needsChange,
-            change_for: needsChange ? parseFloat(changeFor) || null : null,
-          })
-          .select('id')
-          .single();
-
-        if (error) throw error;
-        clearCart();
-        navigate(`/pedido/${data.id}`);
+      if (error || data?.error) {
+        throw new Error(data?.error || 'Erro ao processar pedido. Tente novamente.');
       }
+
+      if (data?.order_token) {
+        localStorage.setItem(`order-token-${data.order_id}`, data.order_token);
+      }
+
+      clearCart();
+      navigate(`/pedido/${data.order_id}?t=${data.order_token}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao finalizar pedido. Tente novamente.');
     } finally {

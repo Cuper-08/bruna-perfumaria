@@ -19,6 +19,16 @@ Deno.serve(async (req) => {
     return new Response('ok', { status: 200 })
   }
 
+  // Optional signature verification — set ASAAS_WEBHOOK_TOKEN secret + same value in Asaas webhook config
+  const expectedToken = Deno.env.get('ASAAS_WEBHOOK_TOKEN')
+  if (expectedToken) {
+    const receivedToken = req.headers.get('asaas-access-token')
+    if (receivedToken !== expectedToken) {
+      console.warn('[webhook] invalid signature — rejecting')
+      return new Response('unauthorized', { status: 401 })
+    }
+  }
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
