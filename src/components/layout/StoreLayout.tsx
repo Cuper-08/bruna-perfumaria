@@ -12,7 +12,7 @@ interface StoreLayoutProps {
 
 const StoreLayout = ({ children }: StoreLayoutProps) => {
   const { data: customization } = useStoreCustomization();
-  const promoText = customization?.promo_bar_text || '✨ Frete grátis acima de R$ 50,00 • Parcele em até 3x';
+  const promoText = customization?.promo_bar_text || '✨ Frete grátis acima de R$ 50,00 • Parcele em até 6x';
 
   return (
     <div className="flex flex-col min-h-screen">
