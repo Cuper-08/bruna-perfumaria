@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import StoreLayout from '@/components/layout/StoreLayout';
+import PageHeader from '@/components/layout/PageHeader';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
@@ -10,6 +11,7 @@ const CartPage = () => {
   if (items.length === 0) {
     return (
       <StoreLayout>
+        <PageHeader title="Carrinho" />
         <div className="container mx-auto px-4 py-16 text-center">
           <ShoppingBag className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
           <h1 className="font-display text-2xl font-semibold mb-2">Carrinho vazio</h1>
@@ -24,10 +26,8 @@ const CartPage = () => {
 
   return (
     <StoreLayout>
+      <PageHeader title={`Carrinho (${itemCount} ${itemCount === 1 ? 'item' : 'itens'})`} />
       <div className="container mx-auto px-4 py-6">
-        <h1 className="font-display text-2xl md:text-3xl font-bold mb-6">
-          Carrinho ({itemCount} {itemCount === 1 ? 'item' : 'itens'})
-        </h1>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Items */}

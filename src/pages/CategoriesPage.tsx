@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import StoreLayout from '@/components/layout/StoreLayout';
+import PageHeader from '@/components/layout/PageHeader';
 import { Package, Sparkles, Droplets, Palette, Heart, Scissors, Leaf } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -48,20 +49,13 @@ const CategoriesPage = () => {
 
   return (
     <StoreLayout>
+      <PageHeader title="Categorias" />
       <div className="min-h-screen bg-background pb-24">
         <div className="px-4 pt-6 pb-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-display font-bold text-foreground"
-          >
-            Categorias
-          </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="text-sm text-muted-foreground mt-1"
+            className="text-sm text-muted-foreground"
           >
             Explore nossos produtos por categoria
           </motion.p>

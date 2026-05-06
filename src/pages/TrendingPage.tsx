@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { Flame } from 'lucide-react';
 import StoreLayout from '@/components/layout/StoreLayout';
+import PageHeader from '@/components/layout/PageHeader';
 import ProductCard from '@/components/product/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -48,6 +49,7 @@ const TrendingPage = () => {
 
   return (
     <StoreLayout>
+      <PageHeader title="Em Alta" />
       <div className="min-h-screen bg-background pb-24">
         <div className="px-4 pt-6 pb-4">
           <motion.div
