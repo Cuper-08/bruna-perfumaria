@@ -5,6 +5,7 @@ import { Gem, Brush, Wind, Flower2, Leaf, ShieldCheck, Package } from 'lucide-re
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
+import { getCategoryImage } from '@/lib/category-icons';
 
 const iconMap: Record<string, LucideIcon> = {
   Sparkles: Gem,
@@ -90,16 +91,28 @@ const CategoryGrid = () => {
         >
           {categories.map(cat => {
             const Icon = iconMap[cat.slug] || iconMap[cat.icon || 'Package'] || Package;
+            const image = getCategoryImage(cat.slug);
             return (
               <motion.div key={cat.id} variants={item} whileHover={{ scale: 1.05, y: -2 }}>
                 <Link
                   to={`/categoria/${cat.slug}`}
-                  className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-card border border-border/40 shadow-sm hover:shadow-md hover:border-accent/30 transition-colors duration-300"
+                  className="group flex flex-col items-center gap-2.5 p-3 rounded-2xl bg-card border border-border/40 shadow-sm hover:shadow-md hover:border-accent/30 transition-all duration-300"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center group-hover:from-accent/25 group-hover:to-accent/10 transition-all duration-300">
-                    <Icon className="h-5 w-5 text-accent" strokeWidth={1.5} />
-                  </div>
-                  <span className="text-xs font-medium tracking-wide text-foreground/70 group-hover:text-foreground transition-colors">
+                  {image ? (
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-accent/15 shadow-sm group-hover:ring-accent/40 transition-all duration-300">
+                      <img
+                        src={image}
+                        alt={cat.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center group-hover:from-accent/25 group-hover:to-accent/10 transition-all duration-300">
+                      <Icon className="h-5 w-5 text-accent" strokeWidth={1.5} />
+                    </div>
+                  )}
+                  <span className="text-xs font-medium tracking-wide text-foreground/70 group-hover:text-foreground transition-colors text-center leading-tight">
                     {cat.name}
                   </span>
                 </Link>
