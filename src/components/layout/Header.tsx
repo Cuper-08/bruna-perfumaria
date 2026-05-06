@@ -18,7 +18,7 @@ const Header = () => {
           animate={{ x: ['0%', '-50%'] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
         >
-          ✨ Frete grátis acima de R$ 50,00 • Parcele em até 3x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Frete grátis acima de R$ 50,00 • Parcele em até 3x
+          ✨ Frete grátis acima de R$ 50,00 • Parcele em até 6x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ✨ Frete grátis acima de R$ 50,00 • Parcele em até 6x
         </motion.p>
       </div>
 
