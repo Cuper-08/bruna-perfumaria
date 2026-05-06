@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import StoreLayout from '@/components/layout/StoreLayout';
+import PageHeader from '@/components/layout/PageHeader';
 import ProductCard from '@/components/product/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,6 +55,7 @@ const CategoryPage = () => {
 
   return (
     <StoreLayout>
+      <PageHeader title={category?.name || 'Produtos'} />
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6 tracking-wide">

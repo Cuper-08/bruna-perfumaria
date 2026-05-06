@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Package, ArrowLeft, Copy, Clock, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import PageHeader from '@/components/layout/PageHeader';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Order = Tables<'orders'>;
@@ -81,6 +82,7 @@ export default function OrderConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <PageHeader title="Pedido Confirmado" backTo="/" />
       <div className="max-w-2xl mx-auto px-4 py-8">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}

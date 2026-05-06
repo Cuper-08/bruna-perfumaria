@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import StoreLayout from '@/components/layout/StoreLayout';
+import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag, ChevronRight, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -82,6 +83,7 @@ const ProductPage = () => {
   if (isLoading) {
     return (
       <StoreLayout>
+        <PageHeader />
         <div className="container mx-auto px-4 py-10">
           <div className="grid md:grid-cols-2 gap-10">
             <Skeleton className="aspect-square rounded-2xl" />
@@ -100,6 +102,7 @@ const ProductPage = () => {
   if (!product) {
     return (
       <StoreLayout>
+        <PageHeader />
         <div className="container mx-auto px-4 py-16 text-center">
           <p className="text-lg text-muted-foreground">Produto não encontrado</p>
           <Button asChild variant="link" className="mt-4">
@@ -115,6 +118,7 @@ const ProductPage = () => {
 
   return (
     <StoreLayout>
+      <PageHeader />
       <div className="container mx-auto px-4 py-8 md:py-10">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-8 tracking-wide">
           <Link to="/" className="hover:text-foreground transition-colors">Início</Link>

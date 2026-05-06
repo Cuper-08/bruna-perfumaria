@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
 import StoreLayout from '@/components/layout/StoreLayout';
+import PageHeader from '@/components/layout/PageHeader';
 import ProductCard from '@/components/product/ProductCard';
 import { useProductSearch } from '@/hooks/useProductSearch';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +14,7 @@ const SearchPage = () => {
 
   return (
     <StoreLayout>
+      <PageHeader title="Buscar" />
       <div className="container mx-auto px-4 py-8 min-h-[60vh]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
