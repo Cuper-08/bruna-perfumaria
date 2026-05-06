@@ -2,7 +2,7 @@ import { Truck, CreditCard, BadgeCheck, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const items = [
-  { icon: Truck, label: 'Frete Grátis', desc: 'Acima de R$199' },
+  { icon: Truck, label: 'Frete Grátis', desc: 'Acima de R$ 50,00' },
   { icon: CreditCard, label: 'Parcele em 3x', desc: 'Sem juros' },
   { icon: BadgeCheck, label: 'Originais', desc: '100% autênticos' },
   { icon: RefreshCw, label: 'Troca Fácil', desc: 'Até 7 dias' },
