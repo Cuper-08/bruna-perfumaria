@@ -31,55 +31,52 @@ const ProductCard = memo(({ id, title, slug, price, image, featured }: ProductCa
   const srcset = srcSet(image, 400, { quality: 70 });
 
   return (
-    <div className="transition-transform duration-300 hover:-translate-y-1">
+    <div className="group">
       <Link
         to={`/produto/${slug}`}
-        className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 relative border border-border/30 block"
+        className="block relative"
       >
-        {featured && (
-          <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-foreground text-[10px] font-semibold shadow-md tracking-wide">
-            <Star className="h-3 w-3 fill-current" />
-            Destaque
-          </div>
-        )}
-
-        <div className="aspect-[3/4] bg-muted overflow-hidden">
+        <div className="relative aspect-[3/4] bg-bruna-cream/60 overflow-hidden rounded-2xl ring-1 ring-inset ring-border/30 group-hover:ring-border/60 transition-all duration-500">
+          {featured && (
+            <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-foreground/85 text-background backdrop-blur-sm text-[10px] uppercase tracking-[0.15em] font-semibold">
+              <Star className="h-2.5 w-2.5 fill-current" strokeWidth={1.5} />
+              Destaque
+            </div>
+          )}
           <img
             src={optimized}
             srcSet={srcset || undefined}
             sizes="(max-width: 768px) 50vw, 25vw"
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
             loading="lazy"
             decoding="async"
             width={400}
             height={533}
           />
+          <Button
+            ref={btnRef}
+            size="icon"
+            className="absolute bottom-3 right-3 h-10 w-10 rounded-full bg-card/95 backdrop-blur-md text-foreground hover:bg-foreground hover:text-background border border-border/40 transition-all duration-300 shadow-sm hover:shadow-lg active:scale-90 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0"
+            variant="ghost"
+            aria-label={added ? 'Adicionado' : 'Adicionar ao carrinho'}
+            onClick={handleAdd}
+          >
+            {added ? (
+              <Check className="h-4 w-4" strokeWidth={2.5} />
+            ) : (
+              <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+            )}
+          </Button>
         </div>
 
-        <div className="p-4 md:p-5">
-          <h3 className="font-display text-base font-medium text-foreground line-clamp-2 mb-3 min-h-[3rem] leading-snug">
+        <div className="pt-4 pb-2 px-1">
+          <h3 className="font-display text-base md:text-lg font-medium text-foreground line-clamp-2 leading-snug min-h-[2.75rem]">
             {title}
           </h3>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-lg font-bold text-primary tracking-tight">
-              R$ {price.toFixed(2).replace('.', ',')}
-            </span>
-            <Button
-              ref={btnRef}
-              size="icon"
-              className="h-8 w-8 rounded-full bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground transition-all duration-300 shrink-0 active:scale-90"
-              variant="ghost"
-              aria-label={added ? 'Adicionado' : 'Adicionar ao carrinho'}
-              onClick={handleAdd}
-            >
-              {added ? (
-                <Check className="h-4 w-4" strokeWidth={2.5} />
-              ) : (
-                <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
-              )}
-            </Button>
-          </div>
+          <p className="mt-2 text-base font-semibold text-foreground tracking-tight">
+            R$ {price.toFixed(2).replace('.', ',')}
+          </p>
         </div>
       </Link>
     </div>

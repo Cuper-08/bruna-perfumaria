@@ -69,7 +69,7 @@ const CategoryGrid = () => {
               <Link
                 key={cat.id}
                 to={`/categoria/${cat.slug}`}
-                className="group relative aspect-square rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1"
+                className="group relative aspect-[4/5] rounded-2xl overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl shadow-md"
               >
                 {image ? (
                   <>
@@ -77,13 +77,16 @@ const CategoryGrid = () => {
                       src={image}
                       alt={cat.name}
                       loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-bruna-dark/85 via-bruna-dark/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-bruna-dark/90 via-bruna-dark/40 to-bruna-dark/10 transition-opacity duration-500 group-hover:from-bruna-dark/95" />
                     <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
-                    <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col items-center justify-end text-center">
-                      <span className="font-display text-base md:text-lg font-semibold text-bruna-cream tracking-wide group-hover:text-accent transition-colors duration-500">
+                    <div className="absolute inset-x-0 bottom-0 p-4 md:p-5 flex flex-col items-center text-center gap-1">
+                      <span className="font-display text-base md:text-xl font-semibold text-bruna-cream tracking-wide group-hover:text-accent transition-colors duration-500">
                         {cat.name}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-[0.25em] text-bruna-cream/55 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        Explorar →
                       </span>
                     </div>
                   </>

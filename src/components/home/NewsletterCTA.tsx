@@ -31,10 +31,10 @@ const NewsletterCTA = () => {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
           <p className="eyebrow mb-4">Bruna no seu inbox</p>
-          <h2 className="display-lg text-foreground mb-5">
+          <h2 className="display-lg text-foreground mb-5 text-balance">
             Lançamentos, ofertas e descobertas <span className="italic">em primeira mão</span>.
           </h2>
-          <p className="text-muted-foreground text-base md:text-lg mb-8 max-w-lg mx-auto">
+          <p className="text-foreground/65 text-base md:text-lg mb-8 max-w-lg mx-auto text-balance">
             Sem spam. Apenas o que importa, no ritmo certo.
           </p>
 

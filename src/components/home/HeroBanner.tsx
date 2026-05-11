@@ -27,18 +27,22 @@ const HeroBanner = () => {
             <h1 className="display-xl text-foreground mb-6 animate-slide-up whitespace-pre-line" style={{ animationDelay: '80ms' }}>
               {heroTitle}
             </h1>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 animate-slide-up" style={{ animationDelay: '180ms' }}>
+            <p className="text-lg md:text-xl text-foreground/70 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-10 animate-slide-up" style={{ animationDelay: '180ms' }}>
               {heroSubtitle}
             </p>
-            <div className="animate-slide-up" style={{ animationDelay: '280ms' }}>
+            <div className="flex flex-col sm:flex-row items-center lg:items-start gap-4 lg:gap-5 animate-slide-up" style={{ animationDelay: '280ms' }}>
               <Link
                 to={ctaLink}
-                className="inline-flex items-center gap-3 group"
+                className="inline-flex items-center gap-3 px-8 py-4 bg-foreground text-background rounded-full text-xs uppercase tracking-[0.25em] font-semibold hover:bg-primary transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 group"
               >
-                <span className="text-sm uppercase tracking-[0.2em] font-semibold text-foreground border-b border-foreground/30 pb-1 group-hover:border-foreground transition-colors">
-                  {ctaText}
-                </span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
+                {ctaText}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
+              </Link>
+              <Link
+                to="/destaques"
+                className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] font-semibold text-foreground/70 hover:text-foreground transition-colors border-b border-foreground/20 hover:border-foreground/50 pb-1"
+              >
+                Em alta agora
               </Link>
             </div>
           </div>
