@@ -1,9 +1,8 @@
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import Header from './Header';
 import Footer from './Footer';
 import WhatsAppButton from './WhatsAppButton';
-import BottomNavBar from './BottomNavBar';
-
+import CartDrawer from '@/components/cart/CartDrawer';
 import { useStoreCustomization } from '@/hooks/useStoreCustomization';
 
 interface StoreLayoutProps {
@@ -12,26 +11,22 @@ interface StoreLayoutProps {
 
 const StoreLayout = ({ children }: StoreLayoutProps) => {
   const { data: customization } = useStoreCustomization();
-  const promoText = customization?.promo_bar_text || '✨ Frete grátis acima de R$ 50,00 • Parcele em até 6x';
+  const promoText = customization?.promo_bar_text || 'Frete grátis acima de R$ 50,00 · Parcele em até 6x sem juros';
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Promo bar marquee */}
-      <div className="bg-bruna-dark text-center py-1.5 px-4 overflow-hidden">
-        <motion.p
-          className="text-[11px] tracking-widest uppercase text-accent/90 font-medium whitespace-nowrap"
-          animate={{ x: ['0%', '-50%'] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        >
-          {promoText} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {promoText}
-        </motion.p>
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Promo bar — static, editorial */}
+      <div className="bg-bruna-dark text-bruna-cream/90 text-center px-4 py-2 text-[10px] tracking-[0.25em] uppercase">
+        {promoText}
       </div>
 
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <Header />
+
+      <main className="flex-1">{children}</main>
+
       <Footer />
       <WhatsAppButton />
-      
-      <BottomNavBar />
+      <CartDrawer />
     </div>
   );
 };

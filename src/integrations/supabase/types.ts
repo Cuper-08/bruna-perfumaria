@@ -254,6 +254,8 @@ export type Database = {
           footer_phone: string | null
           hero_cta_link: string | null
           hero_cta_text: string | null
+          hero_eyebrow: string | null
+          hero_image_url: string | null
           hero_subtitle: string | null
           hero_title: string | null
           id: string
@@ -267,6 +269,8 @@ export type Database = {
           footer_phone?: string | null
           hero_cta_link?: string | null
           hero_cta_text?: string | null
+          hero_eyebrow?: string | null
+          hero_image_url?: string | null
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
@@ -280,6 +284,8 @@ export type Database = {
           footer_phone?: string | null
           hero_cta_link?: string | null
           hero_cta_text?: string | null
+          hero_eyebrow?: string | null
+          hero_image_url?: string | null
           hero_subtitle?: string | null
           hero_title?: string | null
           id?: string
@@ -560,3 +566,4 @@ export const Constants = {
     },
   },
 } as const
+<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />

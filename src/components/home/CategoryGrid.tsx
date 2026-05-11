@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Gem, Brush, Wind, Flower2, Leaf, ShieldCheck, Package } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { getCategoryImage } from '@/lib/category-icons';
 
@@ -24,16 +23,6 @@ const iconMap: Record<string, LucideIcon> = {
   higiene: ShieldCheck,
 };
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
-};
-
 const CategoryGrid = () => {
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categories'],
@@ -50,11 +39,11 @@ const CategoryGrid = () => {
 
   if (isLoading) {
     return (
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
+              <Skeleton key={i} className="aspect-square rounded-2xl" />
             ))}
           </div>
         </div>
@@ -65,61 +54,51 @@ const CategoryGrid = () => {
   if (!categories?.length) return null;
 
   return (
-    <section className="py-8">
-      <div className="container mx-auto px-4">
-        {/* Section title */}
-        <motion.div
-          className="flex items-center justify-center gap-4 mb-6"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="flex-1 h-px bg-gradient-to-r from-transparent to-accent/30" />
-          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground/80">
-            Categorias
-          </h2>
-          <div className="flex-1 h-px bg-gradient-to-l from-transparent to-accent/30" />
-        </motion.div>
+    <section className="py-16 md:py-24 lg:py-32 bg-background">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="text-center mb-12 md:mb-16">
+          <p className="eyebrow mb-3">Universo Bruna</p>
+          <h2 className="display-lg text-foreground">Nossas categorias</h2>
+        </div>
 
-        <motion.div
-          className="grid grid-cols-3 md:grid-cols-6 gap-3"
-          variants={container}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-50px' }}
-        >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 stagger-children">
           {categories.map(cat => {
             const Icon = iconMap[cat.slug] || iconMap[cat.icon || 'Package'] || Package;
             const image = getCategoryImage(cat.slug);
             return (
-              <motion.div key={cat.id} variants={item} whileHover={{ y: -3 }}>
-                <Link
-                  to={`/categoria/${cat.slug}`}
-                  className="group flex flex-col items-center gap-2"
-                >
-                  {image ? (
-                    <div className="w-full aspect-square rounded-2xl overflow-hidden ring-1 ring-accent/10 shadow-sm group-hover:ring-accent/30 group-hover:shadow-md transition-all duration-300">
-                      <img
-                        src={image}
-                        alt={cat.name}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
+              <Link
+                key={cat.id}
+                to={`/categoria/${cat.slug}`}
+                className="group relative aspect-square rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-xl hover:-translate-y-1"
+              >
+                {image ? (
+                  <>
+                    <img
+                      src={image}
+                      alt={cat.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-bruna-dark/85 via-bruna-dark/30 to-transparent" />
+                    <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 p-5 flex flex-col items-center justify-end text-center">
+                      <span className="font-display text-base md:text-lg font-semibold text-bruna-cream tracking-wide group-hover:text-accent transition-colors duration-500">
+                        {cat.name}
+                      </span>
                     </div>
-                  ) : (
-                    <div className="w-full aspect-square rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 flex items-center justify-center group-hover:from-accent/25 group-hover:to-accent/10 transition-all duration-300">
-                      <Icon className="h-6 w-6 text-accent" strokeWidth={1.5} />
-                    </div>
-                  )}
-                  <span className="text-xs font-medium tracking-wide text-foreground/70 group-hover:text-foreground transition-colors text-center leading-tight">
-                    {cat.name}
-                  </span>
-                </Link>
-              </motion.div>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 bg-card border border-border/40 group-hover:border-accent/40 transition-colors duration-500">
+                    <Icon className="h-8 w-8 text-foreground/60 group-hover:text-accent transition-colors duration-500" strokeWidth={1.25} />
+                    <span className="font-display text-sm md:text-base font-medium text-foreground/85 group-hover:text-foreground transition-colors duration-500 text-center">
+                      {cat.name}
+                    </span>
+                  </div>
+                )}
+              </Link>
             );
           })}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

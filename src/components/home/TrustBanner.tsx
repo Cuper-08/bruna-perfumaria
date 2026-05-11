@@ -1,48 +1,31 @@
 import { Truck, CreditCard, BadgeCheck, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const items = [
-  { icon: Truck, label: 'Frete Grátis', desc: 'Acima de R$ 50,00' },
-  { icon: CreditCard, label: 'Parcele em 3x', desc: 'Sem juros' },
-  { icon: BadgeCheck, label: 'Originais', desc: '100% autênticos' },
-  { icon: RefreshCw, label: 'Troca Fácil', desc: 'Até 7 dias' },
+  { icon: Truck, label: 'Frete grátis', desc: 'Acima de R$ 50,00' },
+  { icon: CreditCard, label: 'Parcele em 6x', desc: 'Sem juros no cartão' },
+  { icon: BadgeCheck, label: 'Produtos originais', desc: '100% autênticos' },
+  { icon: RefreshCw, label: 'Troca facilitada', desc: 'Até 7 dias úteis' },
 ];
-
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1 } },
-};
-
-const item = {
-  hidden: { opacity: 0, x: -10 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
-};
 
 const TrustBanner = () => {
   return (
-    <section className="py-6">
-      <div className="container mx-auto px-4">
-        <div className="premium-divider mb-6" />
-        <motion.div
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          variants={container}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-50px' }}
-        >
-          {items.map(i => (
-            <motion.div key={i.label} variants={item} className="flex items-center gap-3 justify-center md:justify-start">
-              <div className="w-9 h-9 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <i.icon className="h-4 w-4 text-accent" strokeWidth={1.5} />
-              </div>
+    <section className="py-16 md:py-20 bg-bruna-cream border-y border-border/40">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
+          {items.map((i, idx) => (
+            <div
+              key={i.label}
+              className="flex flex-col items-center text-center gap-3 animate-slide-up"
+              style={{ animationDelay: `${idx * 80}ms` }}
+            >
+              <i.icon className="h-7 w-7 text-accent" strokeWidth={1.25} />
               <div>
-                <p className="text-xs font-semibold text-foreground/80 tracking-wide">{i.label}</p>
-                <p className="text-[10px] text-muted-foreground">{i.desc}</p>
+                <p className="font-display text-base md:text-lg font-semibold text-foreground">{i.label}</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1">{i.desc}</p>
               </div>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
-        <div className="premium-divider mt-6" />
+        </div>
       </div>
     </section>
   );

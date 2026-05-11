@@ -7,7 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
 import CookieBanner from "./components/CookieBanner";
-import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import Index from "./pages/Index";
 
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -108,7 +107,6 @@ const App = () => (
           <ScrollToTop />
           <AppShell />
           <CookieBanner />
-          <PWAInstallPrompt />
         </BrowserRouter>
       </CartProvider>
     </TooltipProvider>

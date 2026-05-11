@@ -3,10 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface StoreCustomization {
   id: string;
+  hero_eyebrow: string | null;
   hero_title: string;
   hero_subtitle: string;
   hero_cta_text: string;
   hero_cta_link: string;
+  hero_image_url: string | null;
   promo_bar_text: string;
   whatsapp_number: string;
   whatsapp_message: string;

@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/product/ProductCard';
@@ -21,11 +23,11 @@ const FeaturedProducts = () => {
 
   if (isLoading) {
     return (
-      <section className="py-10">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-72 rounded-2xl" />
+              <Skeleton key={i} className="aspect-[3/4] rounded-2xl" />
             ))}
           </div>
         </div>
@@ -36,24 +38,23 @@ const FeaturedProducts = () => {
   if (!products?.length) return null;
 
   return (
-    <section className="py-10">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-center gap-4 mb-8 animate-fade-in">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-px bg-accent/40" />
-            <div className="w-1.5 h-1.5 rounded-full bg-accent/50" />
+    <section className="py-16 md:py-24 lg:py-32 bg-background">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12 md:mb-16 gap-4">
+          <div>
+            <p className="eyebrow mb-3">Edição especial</p>
+            <h2 className="display-lg text-foreground">Selecionados para você</h2>
           </div>
-          <div className="text-center">
-            <h2 className="font-display text-xl md:text-2xl font-semibold tracking-wide">Destaques</h2>
-            <p className="text-[11px] text-muted-foreground tracking-widest uppercase mt-1">Selecionados para você</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent/50" />
-            <div className="w-8 h-px bg-accent/40" />
-          </div>
+          <Link
+            to="/destaques"
+            className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.2em] font-semibold text-foreground/70 hover:text-foreground transition-colors group self-start md:self-end"
+          >
+            Ver tudo
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
+          </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8 stagger-children">
           {products.map(p => (
             <ProductCard
               key={p.id}

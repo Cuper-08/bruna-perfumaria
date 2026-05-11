@@ -13,10 +13,12 @@ const AdminAppearance = () => {
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState({
     id: '',
+    hero_eyebrow: '',
     hero_title: '',
     hero_subtitle: '',
     hero_cta_text: '',
     hero_cta_link: '',
+    hero_image_url: '',
     promo_bar_text: '',
     whatsapp_number: '',
     whatsapp_message: '',
@@ -34,10 +36,12 @@ const AdminAppearance = () => {
         const hours = (row.footer_hours as { weekdays?: string; saturday?: string; sunday?: string }) || {};
         setData({
           id: row.id,
+          hero_eyebrow: row.hero_eyebrow || '',
           hero_title: row.hero_title || '',
           hero_subtitle: row.hero_subtitle || '',
           hero_cta_text: row.hero_cta_text || '',
           hero_cta_link: row.hero_cta_link || '',
+          hero_image_url: row.hero_image_url || '',
           promo_bar_text: row.promo_bar_text || '',
           whatsapp_number: row.whatsapp_number || '',
           whatsapp_message: row.whatsapp_message || '',
@@ -56,10 +60,12 @@ const AdminAppearance = () => {
   const handleSave = async () => {
     setSaving(true);
     const { error } = await supabase.from('store_customization').update({
+      hero_eyebrow: data.hero_eyebrow || null,
       hero_title: data.hero_title,
       hero_subtitle: data.hero_subtitle,
       hero_cta_text: data.hero_cta_text,
       hero_cta_link: data.hero_cta_link,
+      hero_image_url: data.hero_image_url || null,
       promo_bar_text: data.promo_bar_text,
       whatsapp_number: data.whatsapp_number,
       whatsapp_message: data.whatsapp_message,
@@ -108,12 +114,16 @@ const AdminAppearance = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <Label>Título</Label>
-            <Input value={data.hero_title} onChange={e => update('hero_title', e.target.value)} className="rounded-xl" />
+            <Label>Eyebrow (pequeno acima do título)</Label>
+            <Input value={data.hero_eyebrow} onChange={e => update('hero_eyebrow', e.target.value)} placeholder="Coleção 2026" className="rounded-xl" />
+          </div>
+          <div>
+            <Label>Título (use \n para quebrar linha)</Label>
+            <Textarea value={data.hero_title} onChange={e => update('hero_title', e.target.value)} rows={2} placeholder="Beleza, fragrância&#10;e cuidado." className="rounded-xl" />
           </div>
           <div>
             <Label>Subtítulo</Label>
-            <Input value={data.hero_subtitle} onChange={e => update('hero_subtitle', e.target.value)} className="rounded-xl" />
+            <Textarea value={data.hero_subtitle} onChange={e => update('hero_subtitle', e.target.value)} rows={2} className="rounded-xl" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -122,8 +132,13 @@ const AdminAppearance = () => {
             </div>
             <div>
               <Label>Link do Botão</Label>
-              <Input value={data.hero_cta_link} onChange={e => update('hero_cta_link', e.target.value)} placeholder="/categoria/perfumes" className="rounded-xl" />
+              <Input value={data.hero_cta_link} onChange={e => update('hero_cta_link', e.target.value)} placeholder="/categorias" className="rounded-xl" />
             </div>
+          </div>
+          <div>
+            <Label>URL da Imagem do Hero</Label>
+            <Input value={data.hero_image_url} onChange={e => update('hero_image_url', e.target.value)} placeholder="https://..." className="rounded-xl" />
+            <p className="text-[11px] text-muted-foreground mt-1">Foto vertical (aspect 4:5). Mín. 800px de largura. Use Unsplash, Pexels ou foto própria.</p>
           </div>
         </CardContent>
       </Card>

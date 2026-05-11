@@ -118,8 +118,37 @@
     @apply backdrop-blur-xl bg-primary/90 border border-white/20 shadow-2xl;
   }
 
+  .glass-soft {
+    @apply backdrop-blur-2xl bg-bruna-cream/80 border-b border-border/40;
+  }
+
   .premium-divider {
     @apply h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent;
+  }
+
+  /* Editorial display typography */
+  .display-xl {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    @apply text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight font-bold;
+  }
+
+  .display-lg {
+    font-family: 'Playfair Display', serif;
+    @apply text-4xl md:text-5xl lg:text-6xl leading-[1.05] tracking-tight font-bold;
+  }
+
+  .display-md {
+    font-family: 'Playfair Display', serif;
+    @apply text-3xl md:text-4xl leading-tight tracking-tight font-bold;
+  }
+
+  .eyebrow {
+    @apply text-[11px] uppercase tracking-[0.3em] text-accent font-semibold;
+  }
+
+  .nav-link {
+    @apply text-xs uppercase tracking-[0.2em] font-medium text-foreground/75 hover:text-foreground transition-colors;
   }
 }
 

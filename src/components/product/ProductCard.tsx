@@ -22,7 +22,7 @@ const ProductCard = memo(({ id, title, slug, price, image, featured }: ProductCa
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addItem({ id, title, price, image: image || '/placeholder.svg' });
+    addItem({ id, title, price, image: image || '/placeholder.svg' }, { openDrawer: true });
     setAdded(true);
     setTimeout(() => setAdded(false), 800);
   };
@@ -57,12 +57,12 @@ const ProductCard = memo(({ id, title, slug, price, image, featured }: ProductCa
           />
         </div>
 
-        <div className="p-3.5">
-          <h3 className="text-sm font-medium text-foreground/85 line-clamp-2 mb-2.5 min-h-[2.5rem] leading-snug">
+        <div className="p-4 md:p-5">
+          <h3 className="font-display text-base font-medium text-foreground line-clamp-2 mb-3 min-h-[3rem] leading-snug">
             {title}
           </h3>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-base font-bold text-primary tracking-tight">
+            <span className="text-lg font-bold text-primary tracking-tight">
               R$ {price.toFixed(2).replace('.', ',')}
             </span>
             <Button

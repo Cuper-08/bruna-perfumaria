@@ -1,62 +1,78 @@
 import { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
   title?: string;
-  /** Optional slot rendered on the right side (e.g. cart icon, share button). */
+  /** Optional slot rendered on the right side. */
   rightSlot?: ReactNode;
-  /** Force a specific destination instead of history.back(). */
+  /** When provided, shows a discreet back link. Use '/' or another specific path. */
   backTo?: string;
+  /** Optional breadcrumb chips (label + href). */
+  breadcrumbs?: Array<{ label: string; href?: string }>;
   className?: string;
 }
 
-const PageHeader = ({ title, rightSlot, backTo, className }: PageHeaderProps) => {
+const PageHeader = ({ title, rightSlot, backTo, breadcrumbs, className }: PageHeaderProps) => {
   const navigate = useNavigate();
 
-  const handleBack = () => {
-    if (backTo) {
-      navigate(backTo);
-      return;
-    }
-    if (typeof window !== 'undefined' && window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
+  const renderBack = () => {
+    if (!backTo) return null;
+    return (
+      <button
+        type="button"
+        onClick={() => navigate(backTo)}
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
+        Voltar
+      </button>
+    );
   };
 
+  const renderBreadcrumbs = () => {
+    if (!breadcrumbs?.length) return null;
+    return (
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {breadcrumbs.map((b, i) => (
+          <span key={i} className="flex items-center gap-1.5">
+            {b.href ? (
+              <Link to={b.href} className="hover:text-foreground transition-colors">{b.label}</Link>
+            ) : (
+              <span className="text-foreground/80">{b.label}</span>
+            )}
+            {i < breadcrumbs.length - 1 && <span className="text-foreground/30">/</span>}
+          </span>
+        ))}
+      </nav>
+    );
+  };
+
+  if (!title && !breadcrumbs?.length && !backTo && !rightSlot) return null;
+
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-40 w-full backdrop-blur-xl bg-white/85 border-b border-accent/15 shadow-[0_1px_0_0_hsl(var(--accent)/0.08)]',
-        className,
-      )}
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
-    >
-      <div className="container mx-auto px-3 h-14 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleBack}
-          aria-label="Voltar"
-          className="h-10 w-10 rounded-full flex items-center justify-center bg-background/80 border border-border/60 text-foreground hover:bg-muted active:scale-95 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-
-        {title && (
-          <h1 className="font-display text-base md:text-lg font-semibold text-foreground truncate flex-1 text-center px-2">
-            {title}
-          </h1>
-        )}
-        {!title && <div className="flex-1" />}
-
-        <div className="h-10 min-w-10 flex items-center justify-end shrink-0">
-          {rightSlot}
+    <section className={cn('bg-background border-b border-border/40', className)}>
+      <div className="container mx-auto px-4 lg:px-8 py-6 md:py-10">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              {renderBack()}
+              {renderBack() && breadcrumbs?.length ? <span className="text-foreground/30 text-xs">·</span> : null}
+              {renderBreadcrumbs()}
+            </div>
+            {title && (
+              <h1 className="display-md text-foreground">{title}</h1>
+            )}
+          </div>
+          {rightSlot && (
+            <div className="flex items-center gap-2 shrink-0">
+              {rightSlot}
+            </div>
+          )}
         </div>
       </div>
-    </header>
+    </section>
   );
 };
 
